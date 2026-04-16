@@ -80,26 +80,6 @@ export default function Multitool() {
           ))}
         </div>
       </nav>
-// <main className={`relative z-10 transition-all duration-300 ${animating ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}>
-        <div className="rounded-3xl mx-4 overflow-hidden border" style={{ backgroundColor: "rgba(8,8,8,0.95)", borderColor: "rgba(255,255,255,0.05)", boxShadow: `0 0 80px ${settings.glow}11` }}>
-          {activeTool === "flashlight" && <FlashlightTool s={settings} />}
-          {activeTool === "level" && <LevelAngleTool s={settings} />}
-          {activeTool === "calculator" && <CalculatorTool s={settings} />}
-          {activeTool === "ruler" && <RulerTool />}
-          {activeTool === "arruler" && <ARRulerTool s={settings} />}
-        </div>
-      </main>
-
-      <nav className="relative z-20 p-4 pb-6">
-        <div className="rounded-2xl p-2 flex justify-around border" style={{ backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)" }}>
-          {[{id:"flashlight",l:"Light",i:<Flashlight size={20} />},{id:"level",l:"Level",i:<Compass size={20} />},{id:"calculator",l:"Calc",i:<Calculator size={20} />},{id:"ruler",l:"Ruler",i:<Ruler size={20} />},{id:"arruler",l:"Measure",i:<Camera size={20} />}].map(t => (
-            <button key={t.id} onClick={() => switchTool(t.id)} className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all" style={activeTool === t.id ? {background:`linear-gradient(to bottom,${settings.accent}22,${settings.glow}11)`,color:"white"} : {color:"rgba(255,255,255,0.35)"}}>
-              <span style={activeTool === t.id ? {color:settings.accent,transform:"scale(1.1)"} : {}}>{t.i}</span>
-              <span className="text-[10px] font-medium">{t.l}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
     </div>
   );
 }
@@ -107,6 +87,7 @@ export default function Multitool() {
 // Combined Level + Angle Tool
 function LevelAngleTool({s}: {s: ToolSettings}) {
   const [mode, setMode] = useState<"level"|"angle">("level");
+  const [orient, setOrient] = useState<"auto"|"portrait"|"landscape">("auto");
   const [roll, setRoll] = useState(0);
   const [pitch, setPitch] = useState(0);
   const [angle, setAngle] = useState(0);
@@ -121,6 +102,18 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
     } else { setPerm(true); }
     setReq(false);
   };
+
+  // Auto-detect orientation
+  useEffect(() => {
+    if (orient !== "auto") return;
+    const detect = () => {
+      const isLandscape = window.innerWidth > window.innerHeight;
+      // could update state to reflect detected orientation
+    };
+    detect();
+    window.addEventListener("resize", detect);
+    return () => window.removeEventListener("resize", detect);
+  }, [orient]);
 
   useEffect(() => {
     if (!perm) return;
@@ -200,8 +193,8 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
             <div className="absolute w-16 h-16 rounded-full transition-all duration-100" style={{background:`radial-gradient(circle at 30% 30%,${col}cc,${col})`,top:`calc(50% + ${Math.min(Math.max(pitch*3,-80),80)}px - 32px)`,left:`calc(50% + ${Math.min(Math.max(roll*3,-80),80)}px - 32px)`,boxShadow:`0 0 25px ${col}66`}} />
           </div>
           <div className="grid grid-cols-2 gap-4 text-center w-full max-w-xs">
-            <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>Horizontal</div><div className="text-xl font-mono font-bold" style={{color:Math.abs(roll)<2?"#22c55e":"white"}}>{roll.toFixed(1)}°</div></div>
-            <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>Vertical</div><div className="text-xl font-mono font-bold" style={{color:Math.abs(pitch)<2?"#22c55e":"white"}}>{pitch.toFixed(1)}°</div></div>
+            <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>{orient === "landscape" ? "Vertical" : "Horizontal"}</div><div className="text-xl font-mono font-bold" style={{color:Math.abs(orient === "landscape" ? pitch : roll)<2?"#22c55e":"white"}}>{(orient === "landscape" ? pitch : roll).toFixed(1)}°</div></div>
+            <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>{orient === "landscape" ? "Horizontal" : "Vertical"}</div><div className="text-xl font-mono font-bold" style={{color:Math.abs(orient === "landscape" ? roll : pitch)<2?"#22c55e":"white"}}>{(orient === "landscape" ? roll : pitch).toFixed(1)}°</div></div>
           </div>
           <div className="text-2xl font-bold" style={{color:lvl?"#22c55e":"rgba(255,255,255,0.35)"}}>{lvl ? "LEVEL" : `${off.toFixed(1)}° off`}</div>
           <button onClick={calibrate} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
