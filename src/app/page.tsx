@@ -139,36 +139,19 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
   const angCol = absAngle < 2 ? "#22c55e" : absAngle < 10 ? s.accent : "#ef4444";
 
   if (perm === null) return (
-    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
-      <div className="flex gap-2 mb-4">
-        <button onClick={() => setMode("angle")} className="px-4 py-2 rounded-lg border transition-all" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
-          <Compass size={20} /><span className="ml-2">Spirit Level</span>
-        </button>
-        <button onClick={() => setMode("level")} className="px-4 py-2 rounded-lg border transition-all" style={mode === "level" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
-          <Move size={20} /><span className="ml-2">Plumb</span>
-        </button>
-      </div>
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-4" onClick={reqPerm}>
       <Move size={48} style={{color:"rgba(255,255,255,0.2)"}} />
-      <p style={{color:"rgba(255,255,255,0.4)"}}>Motion permission required</p>
-      <button onClick={reqPerm} disabled={req} className="px-6 py-2 rounded-full font-semibold border" style={{backgroundColor:`${s.accent}18`,borderColor:`${s.accent}50`,color:s.accent}}>
-        {req ? "..." : "Enable Motion Sensors"}
-      </button>
+      <p style={{color:"rgba(255,255,255,0.4)"}}>Tap to enable motion sensors</p>
+      <p className="text-xs" style={{color:"rgba(255,255,255,0.25)"}}>Required for Level and Plumb features</p>
     </div>
   );
 
   if (perm === false) return (
     <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
-      <div className="flex gap-2 mb-4">
-        <button onClick={() => setMode("angle")} className="px-4 py-2 rounded-lg border" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
-          <Compass size={20} /><span className="ml-2">Spirit Level</span>
-        </button>
-        <button onClick={() => setMode("level")} className="px-4 py-2 rounded-lg border" style={mode === "level" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
-          <Move size={20} /><span className="ml-2">Plumb</span>
-        </button>
-      </div>
       <Move size={48} style={{color:"rgba(239,68,68,0.5)"}} />
       <p style={{color:"#ef4444"}}>Motion sensors denied</p>
       <p className="text-sm" style={{color:"rgba(255,255,255,0.4)"}}>Enable in Settings &gt; Safari &gt; Motion</p>
+      <button onClick={reqPerm} className="px-6 py-2 rounded-full font-semibold border" style={{backgroundColor:`${s.accent}18`,borderColor:`${s.accent}50`,color:s.accent}}>Try Again</button>
     </div>
   );
 
