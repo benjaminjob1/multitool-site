@@ -61,7 +61,7 @@ export default function Multitool() {
       </header>
 
       <main className="flex-1 overflow-auto">
-        <div className="rounded-3xl mx-4 mb-2 overflow-hidden border" style={{ backgroundColor: "rgba(8,8,8,0.95)", borderColor: "rgba(255,255,255,0.05)", boxShadow: `0 0 80px ${settings.glow}11` }}>
+        <div className="rounded-3xl mx-4 mb-4 overflow-hidden border" style={{ backgroundColor: "rgba(8,8,8,0.95)", borderColor: "rgba(255,255,255,0.05)", boxShadow: `0 0 80px ${settings.glow}11` }}>
           {activeTool === "flashlight" && <FlashlightTool s={settings} />}
           {activeTool === "level" && <LevelAngleTool s={settings} />}
           {activeTool === "calculator" && <CalculatorTool s={settings} />}
@@ -70,7 +70,7 @@ export default function Multitool() {
         </div>
       </main>
 
-      <nav className="sticky bottom-0 z-20 p-4 pb-14 shrink-0" style={{ backgroundColor: "rgba(0,0,0,0.95)" }}>
+      <nav className="fixed bottom-0 left-0 right-0 z-20 p-4 pb-16" style={{ backgroundColor: "rgba(0,0,0,0.95)" }}>
         <div className="rounded-2xl p-2 flex justify-around border" style={{ backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)" }}>
           {[{id:"flashlight",l:"Light",i:<Flashlight size={20} />},{id:"level",l:"Level",i:<Compass size={20} />},{id:"calculator",l:"Calc",i:<Calculator size={20} />},{id:"ruler",l:"Ruler",i:<Ruler size={20} />},{id:"arruler",l:"Measure",i:<Camera size={20} />}].map(t => (
             <button key={t.id} onClick={() => switchTool(t.id)} className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all" style={activeTool === t.id ? {background:`linear-gradient(to bottom,${settings.accent}22,${settings.glow}11)`,color:"white"} : {color:"rgba(255,255,255,0.35)"}}>
