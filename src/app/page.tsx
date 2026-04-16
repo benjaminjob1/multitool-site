@@ -184,6 +184,13 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
         </button>
       </div>
 
+      {/* Orientation toggle */}
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => setOrient("auto")} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs" style={orient === "auto" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>Auto</button>
+        <button onClick={() => setOrient("portrait")} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs" style={orient === "portrait" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>⬛ Portrait</button>
+        <button onClick={() => setOrient("landscape")} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs" style={orient === "landscape" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>⬜ Landscape</button>
+      </div>
+
       {mode === "level" ? (
         /* Spirit Level UI */
         <div className="flex flex-col items-center gap-4 w-full">
