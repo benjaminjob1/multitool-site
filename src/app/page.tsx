@@ -387,18 +387,12 @@ function ARRulerTool() {
 
   useEffect(() => {
     if (points.length === 2 && videoRef.current && videoRef.current.videoWidth > 0) {
-      const dx = points[1].x - points[0].x;
-      const dy = points[1].y - points[0].y;
+      const dx = (points[1].x - points[0].x) * (videoRef.current.videoWidth / 640);
+      const dy = (points[1].y - points[0].y) * (videoRef.current.videoHeight / 480);
       const pixelDistance = Math.sqrt(dx * dx + dy * dy);
-      const aspectRatio = videoRef.current.videoWidth / videoRef.current.videoHeight;
-      const knownWidthPx = Math.sqrt(
-        Math.pow((points[1].x - points[0].x) * aspectRatio, 2) + 
-        Math.pow((points[1].y - points[0].y), 2)
-      );
-      // Estimate real distance using known object size
-      const focalLength = 800; // Approximate focal length
-      const estimatedCm = (knownObjectSize * focalLength) / Math.max(knownPixelDistance, 1);
-      setDistance(Math.min(estimatedCm, 500)); // Cap at 5m
+      const focalLength = 800;
+      const estimatedCm = (knownObjectSize * focalLength) / Math.max(pixelDistance, 1);
+      setDistance(Math.min(estimatedCm, 500));
     }
   }, [points, knownObjectSize]);
 
