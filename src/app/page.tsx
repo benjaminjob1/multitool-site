@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Flashlight, Compass, Calculator, Ruler, RotateCcw } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Flashlight, Compass, Calculator, Ruler, RotateCcw, Camera, Move, Trash2 } from "lucide-react";
 
 // Flashlight Tool
 function FlashlightTool() {
@@ -24,7 +24,8 @@ function FlashlightTool() {
       });
       
       const track = mediaStream.getVideoTracks()[0];
-      if (track.getCapabilities() && ('torch' in track.getCapabilities()!)) {
+      const caps = track.getCapabilities();
+      if (caps && 'torch' in caps) {
         await track.applyConstraints({ advanced: [{ torch: true } as any] });
         setStream(mediaStream);
         setOn(true);
@@ -65,19 +66,26 @@ function SpiritLevelTool() {
   const [roll, setRoll] = useState(0);
   const [pitch, setPitch] = useState(0);
   const [calibrated, setCalibrated] = useState({ roll: 0, pitch: 0 });
-  const [supported, setSupported] = useState(true);
+  const [hasSupport, setHasSupport] = useState(false);
+  const calibratedRef = useRef({ roll: 0, pitch: 0 });
 
-  if (typeof window !== "undefined" && window.DeviceOrientationEvent && !supported) {
-    window.addEventListener("deviceorientation", (e) => {
+  useEffect(() => {
+    const handler = (e: DeviceOrientationEvent) => {
       if (e.gamma !== null && e.beta !== null) {
-        setRoll(e.gamma - calibrated.roll);
-        setPitch(e.beta - calibrated.pitch);
+        const newRoll = e.gamma - calibratedRef.current.roll;
+        const newPitch = e.beta - calibratedRef.current.pitch;
+        setRoll(newRoll);
+        setPitch(newPitch);
+        setHasSupport(true);
       }
-    });
-    setSupported(true);
-  }
+    };
+    
+    window.addEventListener("deviceorientation", handler);
+    return () => window.removeEventListener("deviceorientation", handler);
+  }, []);
 
   const calibrate = () => {
+    calibratedRef.current = { roll, pitch };
     setCalibrated({ roll, pitch });
   };
 
@@ -88,66 +96,58 @@ function SpiritLevelTool() {
     return "text-red-400";
   };
 
+  const overallLevel = Math.sqrt(roll * roll + pitch * pitch);
+
   return (
     <div className="flex flex-col items-center justify-center h-full gap-6 px-4">
-      {/* Horizontal indicator */}
-      <div className="text-center">
-        <p className="text-gray-400 text-sm mb-2">Horizontal (Roll)</p>
-        <div className={`text-6xl font-mono font-bold ${levelColor(roll)}`}>
-          {roll.toFixed(1)}°
-        </div>
-        <div className="w-64 h-2 bg-gray-700 rounded-full mt-2 relative overflow-hidden">
-          <div 
-            className="absolute top-0 left-1/2 w-1 h-full bg-green-400 transform -translate-x-1/2 transition-all"
-            style={{ transform: `translateX(calc(-50% + ${Math.max(-30, Math.min(30, roll)) * 5}px)` }}
-          />
-          <div 
-            className="absolute top-0 h-full bg-yellow-400 transition-all"
-            style={{ 
-              left: "50%", 
-              width: `${Math.max(0, 50 - Math.abs(roll))}%`,
-              transform: "translateX(-50%)"
-            }}
-          />
-        </div>
-      </div>
+      {!hasSupport ? (
+        <p className="text-gray-400">Motion sensors not available</p>
+      ) : (
+        <>
+          {/* Bubble level indicator */}
+          <div className="relative w-48 h-48 rounded-full border-4 border-gray-600 bg-gray-800">
+            <div 
+              className="absolute w-16 h-16 rounded-full transition-all duration-100"
+              style={{
+                backgroundColor: overallLevel < 3 ? "#22c55e" : overallLevel < 8 ? "#eab308" : "#ef4444",
+                top: "50%",
+                left: "50%",
+                transform: `translate(-50%, -50%) translate(${roll * 2}px, ${pitch * 2}px)`
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-4 h-4 rounded-full bg-gray-600" />
+            </div>
+          </div>
 
-      {/* Vertical indicator */}
-      <div className="text-center">
-        <p className="text-gray-400 text-sm mb-2">Vertical (Pitch)</p>
-        <div className={`text-6xl font-mono font-bold ${levelColor(pitch)}`}>
-          {pitch.toFixed(1)}°
-        </div>
-        <div className="w-64 h-2 bg-gray-700 rounded-full mt-2 relative overflow-hidden">
-          <div 
-            className="absolute top-0 left-1/2 w-1 h-full bg-green-400 transform -translate-x-1/2 transition-all"
-            style={{ transform: `translateX(calc(-50% + ${Math.max(-30, Math.min(30, pitch)) * 5}px)` }}
-          />
-          <div 
-            className="absolute top-0 h-full bg-yellow-400 transition-all"
-            style={{ 
-              left: "50%", 
-              width: `${Math.max(0, 50 - Math.abs(pitch))}%`,
-              transform: "translateX(-50%)"
-            }}
-          />
-        </div>
-      </div>
+          {/* Numeric displays */}
+          <div className="grid grid-cols-2 gap-6 text-center">
+            <div>
+              <p className="text-gray-400 text-xs mb-1">Horizontal</p>
+              <div className={`text-3xl font-mono font-bold ${levelColor(roll)}`}>
+                {roll.toFixed(1)}°
+              </div>
+            </div>
+            <div>
+              <p className="text-gray-400 text-xs mb-1">Vertical</p>
+              <div className={`text-3xl font-mono font-bold ${levelColor(pitch)}`}>
+                {pitch.toFixed(1)}°
+              </div>
+            </div>
+          </div>
 
-      {/* Flat indicator */}
-      <div className="text-center">
-        <p className="text-gray-400 text-sm mb-2">Level</p>
-        <div className={`text-4xl font-bold ${levelColor(Math.sqrt(roll*roll + pitch*pitch))}`}>
-          {Math.sqrt(roll*roll + pitch*pitch).toFixed(1)}°
-        </div>
-      </div>
+          <div className={`text-4xl font-bold ${levelColor(overallLevel)}`}>
+            {overallLevel.toFixed(1)}° off level
+          </div>
 
-      <button
-        onClick={calibrate}
-        className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl"
-      >
-        <RotateCcw size={18} /> Calibrate / Zero
-      </button>
+          <button
+            onClick={calibrate}
+            className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl"
+          >
+            <RotateCcw size={18} /> Calibrate / Zero
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -198,7 +198,7 @@ function CalculatorTool() {
       case "/": result = curr !== 0 ? prev / curr : 0; break;
     }
 
-    setDisplay(result.toString());
+    setDisplay(result.toString().replace(/\.0+$/, '').slice(0, 12));
     setPrevious(null);
     setOperator(null);
     setWaitForOperand(true);
@@ -232,8 +232,6 @@ function CalculatorTool() {
       <div className="grid grid-cols-4 gap-2">
         {buttons.flat().map((btn, i) => {
           const isNumber = !isNaN(parseInt(btn));
-          const isZero = btn === "0";
-          const isEquals = btn === "=";
           
           return (
             <button
@@ -244,14 +242,12 @@ function CalculatorTool() {
                 else if (btn === "C") clear();
                 else if (btn === "±") setDisplay((parseFloat(display) * -1).toString());
                 else if (btn === "%") setDisplay((parseFloat(display) / 100).toString());
-                else if (isEquals) calculate();
+                else if (btn === "=") calculate();
                 else performOp(btn);
               }}
               className={`
-                ${isNumber ? "bg-gray-700 hover:bg-gray-600" : "bg-orange-500 hover:bg-orange-400 text-white"}
-                ${isEquals ? "col-span-1" : ""}
-                ${isZero ? "col-span-1" : ""}
-                aspect-square rounded-xl text-2xl font-semibold transition-colors
+                ${isNumber ? "bg-gray-700 hover:bg-gray-600 active:bg-gray-500" : "bg-orange-500 hover:bg-orange-400 active:bg-orange-300 text-white"}
+                aspect-square rounded-xl text-2xl font-semibold transition-colors active:scale-95
               `}
             >
               {btn}
@@ -263,58 +259,71 @@ function CalculatorTool() {
   );
 }
 
-// Ruler Tool
+// Ruler Tool (Visual)
 function RulerTool() {
-  const [length, setLength] = useState(10);
+  const [length, setLength] = useState(15);
   
-  const cmToPx = (cm: number) => (cm / 2.54) * 96;
+  const pxPerCm = 38; // Approximate pixels per cm at typical viewing distance
   
   return (
     <div className="flex flex-col items-center justify-center h-full gap-6 px-4">
       <div className="flex items-center gap-4">
         <button
+          onClick={() => setLength(Math.max(5, length - 5))}
+          className="w-12 h-12 bg-gray-700 rounded-xl text-xl"
+        >
+          -5
+        </button>
+        <button
           onClick={() => setLength(Math.max(1, length - 1))}
-          className="w-12 h-12 bg-gray-700 rounded-xl text-2xl"
+          className="w-12 h-12 bg-gray-700 rounded-xl text-xl"
         >
           -
         </button>
-        <div className="text-3xl font-bold w-20 text-center">{length} cm</div>
+        <div className="text-2xl font-bold w-24 text-center">{length} cm</div>
         <button
           onClick={() => setLength(Math.min(50, length + 1))}
-          className="w-12 h-12 bg-gray-700 rounded-xl text-2xl"
+          className="w-12 h-12 bg-gray-700 rounded-xl text-xl"
         >
           +
         </button>
+        <button
+          onClick={() => setLength(Math.min(50, length + 5))}
+          className="w-12 h-12 bg-gray-700 rounded-xl text-xl"
+        >
+          +5
+        </button>
       </div>
 
-      <div className="relative" style={{ width: cmToPx(length) }}>
-        {/* Ruler body */}
-        <div className="h-16 bg-gray-200 rounded border-2 border-gray-400 relative">
-          {/* Markings */}
-          {Array.from({ length: length * 10 + 1 }).map((_, i) => {
-            const cm = Math.floor(i / 10);
-            const mm = i % 10;
-            const isCm = mm === 0;
-            const height = isCm ? 16 : mm === 5 ? 12 : 8;
-            
-            return (
-              <div
-                key={i}
-                className={`absolute top-0 w-px bg-gray-800`}
-                style={{ 
-                  left: `${(i / 10) * (cmToPx(1))}px`,
-                  height: `${height}px`
-                }}
-              />
-            );
-          })}
-        </div>
-        
-        {/* Labels */}
-        <div className="flex justify-between text-xs text-gray-600 mt-1" style={{ width: cmToPx(length) }}>
-          {Array.from({ length: length + 1 }).map((_, i) => (
-            <span key={i}>{i}</span>
-          ))}
+      <div className="overflow-x-auto w-full">
+        <div className="inline-block min-w-full" style={{ width: length * pxPerCm }}>
+          {/* Ruler body */}
+          <div className="h-20 bg-gray-100 rounded-lg border-2 border-gray-400 relative overflow-hidden">
+            {/* CM markings */}
+            {Array.from({ length: length + 1 }).map((_, i) => (
+              <div key={i} className="absolute top-0 h-full flex flex-col">
+                <div className="w-px h-full bg-gray-800" />
+                <span className="text-xs text-gray-600 absolute top-1 -translate-x-1/2">{i}</span>
+              </div>
+            ))}
+            {/* MM markings */}
+            {Array.from({ length: length * 10 }).map((_, i) => {
+              if (i % 10 === 0) return null;
+              const cm = Math.floor(i / 10);
+              const mm = i % 10;
+              return (
+                <div
+                  key={i}
+                  className="absolute top-0 bg-gray-600"
+                  style={{
+                    left: `${(i / 10) * pxPerCm}px`,
+                    width: '1px',
+                    height: mm === 5 ? '60%' : '30%',
+                  }}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -325,23 +334,338 @@ function RulerTool() {
   );
 }
 
-type Tool = "flashlight" | "level" | "calculator" | "ruler";
+// AR Ruler Tool
+function ARRulerTool() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [points, setPoints] = useState<{ x: number; y: number }[]>([]);
+  const [distance, setDistance] = useState<number | null>(null);
+  const [knownObjectSize, setKnownObjectSize] = useState(10); // cm, default credit card width
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+
+  const startCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width: 1280, height: 720 }
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setCameraReady(true);
+        setCameraError("");
+      }
+    } catch (err) {
+      setCameraError("Could not access camera");
+      setCameraReady(false);
+    }
+  }, [facingMode]);
+
+  useEffect(() => {
+    startCamera();
+    return () => {
+      if (videoRef.current?.srcObject) {
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+      }
+    };
+  }, [startCamera]);
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    if (points.length >= 2) {
+      setPoints([{ x, y }]);
+      setDistance(null);
+    } else {
+      setPoints([...points, { x, y }]);
+    }
+  };
+
+  useEffect(() => {
+    if (points.length === 2 && videoRef.current && videoRef.current.videoWidth > 0) {
+      const dx = points[1].x - points[0].x;
+      const dy = points[1].y - points[0].y;
+      const pixelDistance = Math.sqrt(dx * dx + dy * dy);
+      const aspectRatio = videoRef.current.videoWidth / videoRef.current.videoHeight;
+      const knownWidthPx = Math.sqrt(
+        Math.pow((points[1].x - points[0].x) * aspectRatio, 2) + 
+        Math.pow((points[1].y - points[0].y), 2)
+      );
+      // Estimate real distance using known object size
+      const focalLength = 800; // Approximate focal length
+      const estimatedCm = (knownObjectSize * focalLength) / Math.max(knownPixelDistance, 1);
+      setDistance(Math.min(estimatedCm, 500)); // Cap at 5m
+    }
+  }, [points, knownObjectSize]);
+
+  const drawPoints = useCallback(() => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
+    
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw line between points
+    if (points.length === 2) {
+      ctx.strokeStyle = "#fbbf24";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      ctx.lineTo(points[1].x, points[1].y);
+      ctx.stroke();
+    }
+    
+    // Draw points
+    points.forEach((p, i) => {
+      ctx.fillStyle = i === 0 ? "#22c55e" : "#ef4444";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "white";
+      ctx.font = "bold 14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(i === 0 ? "Start" : "End", p.x, p.y - 15);
+    });
+    
+    // Draw distance if available
+    if (distance !== null && points.length === 2) {
+      const midX = (points[0].x + points[1].x) / 2;
+      const midY = (points[0].y + points[1].y) / 2;
+      ctx.fillStyle = "rgba(0,0,0,0.7)";
+      ctx.fillRect(midX - 40, midY - 30, 80, 30);
+      ctx.fillStyle = "#fbbf24";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText(`${(distance / 100).toFixed(2)}m`, midX, midY - 10);
+    }
+  }, [points, distance]);
+
+  useEffect(() => {
+    const interval = setInterval(drawPoints, 16);
+    return () => clearInterval(interval);
+  }, [drawPoints]);
+
+  const clearPoints = () => {
+    setPoints([]);
+    setDistance(null);
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="relative flex-1 bg-black">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <canvas
+          ref={canvasRef}
+          width={640}
+          height={480}
+          onClick={handleCanvasClick}
+          className="absolute inset-0 w-full h-full cursor-crosshair"
+        />
+        
+        {/* Overlay info */}
+        <div className="absolute top-4 left-4 right-4 flex justify-between">
+          <div className="bg-black/50 px-3 py-1 rounded text-sm">
+            Tap 2 points to measure
+          </div>
+          <button
+            onClick={() => {
+              setFacingMode(facingMode === "environment" ? "user" : "environment");
+              startCamera();
+            }}
+            className="bg-black/50 px-3 py-1 rounded text-sm"
+          >
+            Flip Camera
+          </button>
+        </div>
+        
+        {cameraError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+            <p className="text-red-400">{cameraError}</p>
+          </div>
+        )}
+      </div>
+      
+      {/* Controls */}
+      <div className="p-4 bg-gray-800 space-y-3">
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-400">Reference size:</label>
+          <input
+            type="range"
+            min="1"
+            max="30"
+            value={knownObjectSize}
+            onChange={(e) => setKnownObjectSize(parseInt(e.target.value))}
+            className="flex-1"
+          />
+          <span className="w-12 text-right">{knownObjectSize}cm</span>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={clearPoints}
+            className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-700 rounded-lg"
+          >
+            <Trash2 size={16} /> Clear
+          </button>
+          <button
+            onClick={startCamera}
+            className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-700 rounded-lg"
+          >
+            <Camera size={16} /> Restart
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Protractor Tool
+function ProtractorTool() {
+  const [angle, setAngle] = useState(0);
+  const [calibrated, setCalibrated] = useState(0);
+  const [hasSupport, setHasSupport] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: DeviceOrientationEvent) => {
+      if (e.alpha !== null) {
+        let compassAngle = e.alpha - calibrated;
+        if (compassAngle < 0) compassAngle += 360;
+        if (compassAngle > 180) compassAngle -= 360;
+        setAngle(compassAngle);
+        setHasSupport(true);
+      }
+    };
+    
+    // Request permission for device orientation
+    if (typeof DeviceOrientationEvent !== "undefined" && typeof (DeviceOrientationEvent as any).requestPermission === "function") {
+      (DeviceOrientationEvent as any).requestPermission().then((response: string) => {
+        if (response === "granted") {
+          window.addEventListener("deviceorientation", handler);
+        }
+      });
+    } else {
+      window.addEventListener("deviceorientation", handler);
+    }
+    
+    return () => window.removeEventListener("deviceorientation", handler);
+  }, [calibrated]);
+
+  const calibrate = () => {
+    const handler = (e: DeviceOrientationEvent) => {
+      if (e.alpha !== null) {
+        setCalibrated(e.alpha);
+        window.removeEventListener("deviceorientation", handler);
+      }
+    };
+    window.addEventListener("deviceorientation", handler);
+    // Auto-calibrate after 100ms
+    setTimeout(() => setCalibrated((prev: number) => prev + 0), 100);
+  };
+
+  const absAngle = Math.abs(angle);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-6">
+      {!hasSupport ? (
+        <p className="text-gray-400">Compass not available on this device</p>
+      ) : (
+        <>
+          {/* Visual protractor */}
+          <div className="relative w-64 h-32 overflow-hidden">
+            {/* Protractor arc */}
+            <svg viewBox="0 0 200 100" className="w-full h-full">
+              {/* Background arc */}
+              <path
+                d="M 10 100 A 90 90 0 0 1 190 100"
+                fill="none"
+                stroke="#374151"
+                strokeWidth="8"
+              />
+              {/* Degree markings */}
+              {Array.from({ length: 37 }).map((_, i) => {
+                const deg = i * 5;
+                const rad = (deg - 90) * Math.PI / 180;
+                const x1 = 100 + 80 * Math.cos(rad);
+                const y1 = 100 + 80 * Math.sin(rad);
+                const x2 = 100 + (deg % 30 === 0 ? 65 : 72) * Math.cos(rad);
+                const y2 = 100 + (deg % 30 === 0 ? 65 : 72) * Math.sin(rad);
+                return (
+                  <g key={deg}>
+                    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#6b7280" strokeWidth={deg % 90 === 0 ? 2 : 1} />
+                    {deg % 30 === 0 && (
+                      <text x={100 + 50 * Math.cos(rad)} y={100 + 50 * Math.sin(rad)} fill="#9ca3af" fontSize="8" textAnchor="middle" dominantBaseline="middle">
+                        {deg}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+              {/* Current angle indicator */}
+              <line
+                x1="100"
+                y1="100"
+                x2={100 + 70 * Math.cos((angle - 90) * Math.PI / 180)}
+                y2={100 + 70 * Math.sin((angle - 90) * Math.PI / 180)}
+                stroke="#fbbf24"
+                strokeWidth="3"
+              />
+              {/* Center dot */}
+              <circle cx="100" cy="100" r="4" fill="#fbbf24" />
+            </svg>
+          </div>
+
+          {/* Numeric display */}
+          <div className="text-center">
+            <div className={`text-6xl font-mono font-bold ${absAngle < 2 ? "text-green-400" : absAngle < 10 ? "text-yellow-400" : "text-red-400"}`}>
+              {angle.toFixed(1)}°
+            </div>
+            <p className="text-gray-400 text-sm mt-2">
+              {absAngle < 2 ? "Perfect!" : absAngle < 10 ? "Close" : `${absAngle.toFixed(1)}° off`}
+            </p>
+          </div>
+
+          <button
+            onClick={calibrate}
+            className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl"
+          >
+            <RotateCcw size={18} /> Calibrate to 0°
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+type Tool = "flashlight" | "level" | "calculator" | "ruler" | "arruler" | "protractor";
 
 const tools: { id: Tool; label: string; icon: React.ReactNode }[] = [
-  { id: "flashlight", label: "Flashlight", icon: <Flashlight size={24} /> },
-  { id: "level", label: "Spirit Level", icon: <Compass size={24} /> },
-  { id: "calculator", label: "Calculator", icon: <Calculator size={24} /> },
-  { id: "ruler", label: "Ruler", icon: <Ruler size={24} /> },
+  { id: "flashlight", label: "Light", icon: <Flashlight size={20} /> },
+  { id: "level", label: "Level", icon: <Compass size={20} /> },
+  { id: "protractor", label: "Angle", icon: <Move size={20} /> },
+  { id: "calculator", label: "Calc", icon: <Calculator size={20} /> },
+  { id: "ruler", label: "Ruler", icon: <Ruler size={20} /> },
+  { id: "arruler", label: "AR Measure", icon: <Camera size={20} /> },
 ];
 
 export default function Multitool() {
-  const [activeTool, setActiveTool] = useState<Tool>("flashlight");
+  const [activeTool, setActiveTool] = useState<Tool>("level");
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       {/* Header */}
-      <header className="p-4 border-b border-gray-800">
-        <h1 className="text-xl font-bold text-center">Multitool</h1>
+      <header className="p-3 border-b border-gray-800">
+        <h1 className="text-lg font-bold text-center">Multitool</h1>
       </header>
 
       {/* Tool Selector */}
@@ -361,11 +685,13 @@ export default function Multitool() {
       </nav>
 
       {/* Tool Content */}
-      <main className="h-[calc(100vh-120px)]">
+      <main className="flex-1">
         {activeTool === "flashlight" && <FlashlightTool />}
         {activeTool === "level" && <SpiritLevelTool />}
+        {activeTool === "protractor" && <ProtractorTool />}
         {activeTool === "calculator" && <CalculatorTool />}
         {activeTool === "ruler" && <RulerTool />}
+        {activeTool === "arruler" && <ARRulerTool />}
       </main>
     </div>
   );
