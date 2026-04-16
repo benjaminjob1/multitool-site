@@ -70,7 +70,7 @@ export default function Multitool() {
         </div>
       </main>
 
-      <nav className="sticky bottom-0 z-20 p-4 pb-6 shrink-0" style={{ backgroundColor: "rgba(0,0,0,0.95)" }}>
+      <nav className="sticky bottom-0 z-20 p-4 pb-8 shrink-0" style={{ backgroundColor: "rgba(0,0,0,0.95)" }}>
         <div className="rounded-2xl p-2 flex justify-around border" style={{ backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)" }}>
           {[{id:"flashlight",l:"Light",i:<Flashlight size={20} />},{id:"level",l:"Level",i:<Compass size={20} />},{id:"calculator",l:"Calc",i:<Calculator size={20} />},{id:"ruler",l:"Ruler",i:<Ruler size={20} />},{id:"arruler",l:"Measure",i:<Camera size={20} />}].map(t => (
             <button key={t.id} onClick={() => switchTool(t.id)} className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all" style={activeTool === t.id ? {background:`linear-gradient(to bottom,${settings.accent}22,${settings.glow}11)`,color:"white"} : {color:"rgba(255,255,255,0.35)"}}>
@@ -145,7 +145,7 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
           <Compass size={20} /><span className="ml-2">Spirit Level</span>
         </button>
         <button onClick={() => setMode("angle")} className="px-4 py-2 rounded-lg border transition-all" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
-          <Move size={20} /><span className="ml-2">Angle</span>
+          <Move size={20} /><span className="ml-2">Plumb</span>
         </button>
       </div>
       <Move size={48} style={{color:"rgba(255,255,255,0.2)"}} />
@@ -163,7 +163,7 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
           <Compass size={20} /><span className="ml-2">Spirit Level</span>
         </button>
         <button onClick={() => setMode("angle")} className="px-4 py-2 rounded-lg border" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
-          <Move size={20} /><span className="ml-2">Angle</span>
+          <Move size={20} /><span className="ml-2">Plumb</span>
         </button>
       </div>
       <Move size={48} style={{color:"rgba(239,68,68,0.5)"}} />
@@ -200,7 +200,7 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
           <button onClick={calibrate} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
         </div>
       ) : (
-        /* Angle UI */
+        /* Plumb UI */
         <div className="flex flex-col items-center gap-4 w-full">
           <div className="relative w-64">
             <svg viewBox="0 0 200 110" className="w-full">
