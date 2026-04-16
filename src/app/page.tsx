@@ -142,10 +142,10 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
     <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
       <div className="flex gap-2 mb-4">
         <button onClick={() => setMode("level")} className="px-4 py-2 rounded-lg border transition-all" style={mode === "level" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
-          <Compass size={20} /><span className="ml-2">Spirit Level</span>
+          <Compass size={20} /><span className="ml-2">Plumb</span>
         </button>
         <button onClick={() => setMode("angle")} className="px-4 py-2 rounded-lg border transition-all" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
-          <Move size={20} /><span className="ml-2">Plumb</span>
+          <Move size={20} /><span className="ml-2">Spirit Level</span>
         </button>
       </div>
       <Move size={48} style={{color:"rgba(255,255,255,0.2)"}} />
@@ -160,10 +160,10 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
     <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
       <div className="flex gap-2 mb-4">
         <button onClick={() => setMode("level")} className="px-4 py-2 rounded-lg border" style={mode === "level" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
-          <Compass size={20} /><span className="ml-2">Spirit Level</span>
+          <Compass size={20} /><span className="ml-2">Plumb</span>
         </button>
         <button onClick={() => setMode("angle")} className="px-4 py-2 rounded-lg border" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
-          <Move size={20} /><span className="ml-2">Plumb</span>
+          <Move size={20} /><span className="ml-2">Spirit Level</span>
         </button>
       </div>
       <Move size={48} style={{color:"rgba(239,68,68,0.5)"}} />
@@ -177,7 +177,7 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
       {/* Mode selector */}
       <div className="flex gap-2 mb-4">
         <button onClick={() => setMode("level")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "level" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
-          <Compass size={18} />Spirit Level
+          <Compass size={18} />PLUMB
         </button>
         <button onClick={() => setMode("angle")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
           <Move size={18} />Angle
