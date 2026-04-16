@@ -1,149 +1,261 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Flashlight, Compass, Calculator, Ruler, RotateCcw, Camera, Move, Trash2, Check } from "lucide-react";
+import { Flashlight, Compass, Calculator, Ruler, RotateCcw, Camera, Move, Trash2, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
+
+export default function Multitool() {
+  const [activeTool, setActiveTool] = useState<string>("level");
+  const [animating, setAnimating] = useState(false);
+
+  const handleToolChange = (toolId: string) => {
+    if (toolId === activeTool) return;
+    setAnimating(true);
+    setTimeout(() => {
+      setActiveTool(toolId);
+      setAnimating(false);
+    }, 150);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 text-white overflow-hidden">
+      {/* Animated background blobs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-1/3 -left-20 w-60 h-60 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-20 right-20 w-72 h-72 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+
+      {/* Header */}
+      <header className="relative z-10 p-4">
+        <h1 className="text-2xl font-bold text-center bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
+          Multitool
+        </h1>
+      </header>
+
+      {/* Tool Container */}
+      <main className={`relative z-10 transition-all duration-300 ${animating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl mx-4 overflow-hidden shadow-2xl">
+          {activeTool === "flashlight" && <FlashlightTool />}
+          {activeTool === "level" && <LevelTool />}
+          {activeTool === "protractor" && <ProtractorTool />}
+          {activeTool === "calculator" && <CalculatorTool />}
+          {activeTool === "ruler" && <RulerTool />}
+          {activeTool === "arruler" && <ARRulerTool />}
+        </div>
+      </main>
+
+      {/* Bottom Navigation */}
+      <nav className="relative z-20 p-4 pb-6">
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-2 flex justify-around items-center gap-1">
+          {tools.map((tool) => (
+            <button
+              key={tool.id}
+              onClick={() => handleToolChange(tool.id)}
+              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 ${
+                activeTool === tool.id 
+                  ? "bg-gradient-to-b from-purple-500/30 to-purple-600/20 text-white shadow-lg" 
+                  : "text-white/50 hover:text-white/80"
+              }`}
+            >
+              <div className={`transition-transform duration-200 ${activeTool === tool.id ? 'scale-110' : ''}`}>
+                {tool.icon}
+              </div>
+              <span className="text-[10px] font-medium">{tool.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+    </div>
+  );
+}
+
+// Tool definitions
+const tools = [
+  { id: "flashlight", label: "Light", icon: <Flashlight size={20} /> },
+  { id: "level", label: "Level", icon: <Compass size={20} /> },
+  { id: "protractor", label: "Angle", icon: <Move size={20} /> },
+  { id: "calculator", label: "Calc", icon: <Calculator size={20} /> },
+  { id: "ruler", label: "Ruler", icon: <Ruler size={20} /> },
+  { id: "arruler", label: "Measure", icon: <Camera size={20} /> },
+];
 
 // Flashlight Tool
 function FlashlightTool() {
   const [on, setOn] = useState(false);
   const [error, setError] = useState("");
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [loading, setLoading] = useState(false);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const toggleFlashlight = async () => {
-    if (on && stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+  const toggle = async () => {
+    if (on) {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
       setOn(false);
-      setError("");
       return;
     }
 
+    setLoading(true);
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
-      });
-      
-      const track = mediaStream.getVideoTracks()[0];
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      const track = stream.getVideoTracks()[0];
       const caps = track.getCapabilities();
       if (caps && 'torch' in caps) {
         await track.applyConstraints({ advanced: [{ torch: true } as any] });
-        setStream(mediaStream);
+        streamRef.current = stream;
         setOn(true);
         setError("");
       } else {
-        mediaStream.getTracks().forEach(track => track.stop());
-        setError("Flashlight not supported on this device");
+        stream.getTracks().forEach(t => t.stop());
+        setError("Flashlight not supported");
       }
-    } catch (err) {
-      setError("Could not access camera");
+    } catch {
+      setError("Camera access denied");
     }
+    setLoading(false);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6">
-      <div className={`w-32 h-32 rounded-full flex items-center justify-center transition-all ${on ? "bg-yellow-400 shadow-lg shadow-yellow-400/50" : "bg-gray-700"}`}>
-        <Flashlight size={64} className={on ? "text-black" : "text-gray-400"} />
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-6">
+      <div 
+        className={`w-40 h-40 rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer active:scale-95 ${
+          on 
+            ? "bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-[0_0_60px_rgba(250,204,21,0.6)]" 
+            : "bg-gradient-to-br from-slate-700 to-slate-800"
+        }`}
+        onClick={toggle}
+      >
+        <Flashlight size={56} className={on ? "text-black" : "text-slate-400"} />
       </div>
       
       <button
-        onClick={toggleFlashlight}
-        className={`px-8 py-4 rounded-xl text-lg font-semibold transition-all ${on ? "bg-red-500 hover:bg-red-600" : "bg-yellow-400 hover:bg-yellow-500 text-black"}`}
+        onClick={toggle}
+        disabled={loading}
+        className={`px-8 py-3 rounded-full font-semibold transition-all duration-200 active:scale-95 ${
+          on 
+            ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700" 
+            : "bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black"
+        } ${loading ? 'opacity-50' : ''}`}
       >
-        {on ? "Turn Off" : "Turn On"}
+        {loading ? "..." : on ? "Tap to Turn Off" : "Tap to Turn On"}
       </button>
 
-      {error && <p className="text-red-400 text-center px-4">{error}</p>}
-      
-      <p className="text-gray-400 text-sm text-center px-4">
-        {on ? "Flashlight is on" : "Tap to turn on flashlight"}
-      </p>
+      {error && (
+        <p className="text-red-400 text-sm text-center bg-red-500/10 px-4 py-2 rounded-full">{error}</p>
+      )}
     </div>
   );
 }
 
-// Spirit Level Tool
-function SpiritLevelTool() {
+// Level Tool with beautiful bubble
+function LevelTool() {
   const [roll, setRoll] = useState(0);
   const [pitch, setPitch] = useState(0);
   const [calibrated, setCalibrated] = useState({ roll: 0, pitch: 0 });
-  const [hasSupport, setHasSupport] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [sound, setSound] = useState(false);
   const calibratedRef = useRef({ roll: 0, pitch: 0 });
+  const lastBeepRef = useRef(0);
 
   useEffect(() => {
     const handler = (e: DeviceOrientationEvent) => {
-      if (e.gamma !== null && e.beta !== null) {
-        const newRoll = e.gamma - calibratedRef.current.roll;
-        const newPitch = e.beta - calibratedRef.current.pitch;
-        setRoll(newRoll);
-        setPitch(newPitch);
-        setHasSupport(true);
+      if (e.gamma === null) return;
+      const newRoll = e.gamma - calibratedRef.current.roll;
+      const newPitch = e.beta !== null ? e.beta - calibratedRef.current.pitch : 0;
+      setRoll(newRoll);
+      setPitch(newPitch);
+      setHasPermission(true);
+      
+      // Sound feedback when nearly level
+      const overall = Math.sqrt(newRoll * newRoll + newPitch * newPitch);
+      if (sound && overall < 2 && Date.now() - lastBeepRef.current > 500) {
+        lastBeepRef.current = Date.now();
       }
     };
     
     window.addEventListener("deviceorientation", handler);
     return () => window.removeEventListener("deviceorientation", handler);
-  }, []);
+  }, [sound]);
 
   const calibrate = () => {
     calibratedRef.current = { roll, pitch };
-    setCalibrated({ roll, pitch });
   };
 
-  const levelColor = (value: number) => {
-    const abs = Math.abs(value);
-    if (abs < 1) return "text-green-400";
-    if (abs < 5) return "text-yellow-400";
-    return "text-red-400";
-  };
-
-  const overallLevel = Math.sqrt(roll * roll + pitch * pitch);
+  const overall = Math.sqrt(roll * roll + pitch * pitch);
+  const isLevel = overall < 2;
+  const bubbleColor = isLevel ? "#22c55e" : overall < 5 ? "#eab308" : "#ef4444";
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 px-4">
-      {!hasSupport ? (
-        <p className="text-gray-400">Motion sensors not available</p>
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
+      {hasPermission === false ? (
+        <div className="text-center text-slate-400">
+          <Compass size={48} className="mx-auto mb-4 opacity-50" />
+          <p>Motion sensors not available</p>
+        </div>
       ) : (
         <>
-          <div className="relative w-48 h-48 rounded-full border-4 border-gray-600 bg-gray-800">
+          {/* Beautiful bubble level */}
+          <div className="relative w-52 h-52 rounded-full border-4 border-white/20 bg-slate-800/50 backdrop-blur overflow-hidden shadow-inner">
+            {/* Crosshairs */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-full h-px bg-white/10" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="h-full w-px bg-white/10" />
+              </div>
+            </div>
+            
+            {/* Center target */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 border-green-400/50" />
+            
+            {/* Bubble */}
             <div 
-              className="absolute w-16 h-16 rounded-full transition-all duration-100"
+              className="absolute w-16 h-16 rounded-full transition-all duration-100 ease-out shadow-lg"
               style={{
-                backgroundColor: overallLevel < 3 ? "#22c55e" : overallLevel < 8 ? "#eab308" : "#ef4444",
-                top: "50%",
-                left: "50%",
-                transform: `translate(-50%, -50%) translate(${roll * 2}px, ${pitch * 2}px)`
+                background: `radial-gradient(circle at 30% 30%, ${bubbleColor}cc, ${bubbleColor})`,
+                top: `calc(50% + ${Math.min(Math.max(pitch * 3, -80), 80)}px - 32px)`,
+                left: `calc(50% + ${Math.min(Math.max(roll * 3, -80), 80)}px - 32px)`,
+                boxShadow: `0 0 20px ${bubbleColor}88`
               }}
             />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-4 h-4 rounded-full bg-gray-600" />
-            </div>
           </div>
 
+          {/* Readings */}
           <div className="grid grid-cols-2 gap-6 text-center">
-            <div>
-              <p className="text-gray-400 text-xs mb-1">Horizontal</p>
-              <div className={`text-3xl font-mono font-bold ${levelColor(roll)}`}>
+            <div className="bg-white/5 rounded-xl p-3 backdrop-blur">
+              <div className="text-xs text-slate-400 mb-1">Horizontal</div>
+              <div className={`text-2xl font-mono font-bold ${Math.abs(roll) < 2 ? 'text-green-400' : 'text-white'}`}>
                 {roll.toFixed(1)}°
               </div>
             </div>
-            <div>
-              <p className="text-gray-400 text-xs mb-1">Vertical</p>
-              <div className={`text-3xl font-mono font-bold ${levelColor(pitch)}`}>
+            <div className="bg-white/5 rounded-xl p-3 backdrop-blur">
+              <div className="text-xs text-slate-400 mb-1">Vertical</div>
+              <div className={`text-2xl font-mono font-bold ${Math.abs(pitch) < 2 ? 'text-green-400' : 'text-white'}`}>
                 {pitch.toFixed(1)}°
               </div>
             </div>
           </div>
 
-          <div className={`text-4xl font-bold ${levelColor(overallLevel)}`}>
-            {overallLevel.toFixed(1)}° off level
+          {/* Level indicator */}
+          <div className={`text-3xl font-bold ${isLevel ? 'text-green-400 animate-pulse' : 'text-slate-400'}`}>
+            {isLevel ? "✦ LEVEL ✦" : `${overall.toFixed(1)}° off`}
           </div>
 
-          <button
-            onClick={calibrate}
-            className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl"
-          >
-            <RotateCcw size={18} /> Calibrate / Zero
-          </button>
+          {/* Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={calibrate}
+              className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur transition-all"
+            >
+              <RotateCcw size={16} /> Zero
+            </button>
+            <button
+              onClick={() => setSound(!sound)}
+              className={`p-2.5 rounded-xl backdrop-blur transition-all ${sound ? 'bg-green-500/30' : 'bg-white/10'}`}
+            >
+              {sound ? <Volume2 size={20} /> : <VolumeX size={20} />}
+            </button>
+          </div>
         </>
       )}
     </div>
@@ -166,15 +278,6 @@ function CalculatorTool() {
     }
   };
 
-  const inputDecimal = () => {
-    if (waitForOperand) {
-      setDisplay("0.");
-      setWaitForOperand(false);
-    } else if (!display.includes(".")) {
-      setDisplay(display + ".");
-    }
-  };
-
   const clear = () => {
     setDisplay("0");
     setPrevious(null);
@@ -183,69 +286,66 @@ function CalculatorTool() {
   };
 
   const calculate = () => {
-    if (previous === null || operator === null) return;
-    
+    if (!previous || !operator) return;
     const prev = parseFloat(previous);
     const curr = parseFloat(display);
     let result = 0;
-
     switch (operator) {
       case "+": result = prev + curr; break;
       case "-": result = prev - curr; break;
       case "*": result = prev * curr; break;
       case "/": result = curr !== 0 ? prev / curr : 0; break;
     }
-
-    setDisplay(result.toString().replace(/\.0+$/, '').slice(0, 12));
+    setDisplay(result.toString().slice(0, 12).replace(/\.0+$/, ''));
     setPrevious(null);
     setOperator(null);
     setWaitForOperand(true);
   };
 
-  const performOp = (nextOp: string) => {
-    if (operator !== null && !waitForOperand) {
-      calculate();
-    }
-    
+  const performOp = (op: string) => {
+    if (operator && !waitForOperand) calculate();
     setPrevious(display);
-    setOperator(nextOp);
+    setOperator(op);
     setWaitForOperand(true);
   };
 
   const buttons = [
-    ["C", "±", "%", "/"],
-    ["7", "8", "9", "*"],
-    ["4", "5", "6", "-"],
+    ["C", "±", "%", "÷"],
+    ["7", "8", "9", "×"],
+    ["4", "5", "6", "−"],
     ["1", "2", "3", "+"],
     ["0", ".", "="],
   ];
 
   return (
-    <div className="flex flex-col h-full justify-end gap-2 p-4 max-w-sm mx-auto">
-      <div className="bg-gray-800 rounded-xl p-4 mb-2">
-        <div className="text-gray-400 text-sm h-6">{previous} {operator}</div>
+    <div className="p-4 flex flex-col gap-2">
+      <div className="bg-slate-800/80 rounded-2xl p-4 mb-2 backdrop-blur">
+        <div className="text-slate-400 text-sm h-6">{previous} {operator}</div>
         <div className="text-white text-4xl font-mono text-right truncate">{display}</div>
       </div>
       
       <div className="grid grid-cols-4 gap-2">
         {buttons.flat().map((btn, i) => {
-          const isNumber = !isNaN(parseInt(btn));
+          const isOp = ["÷", "×", "−", "+", "="].includes(btn);
+          const isNum = !isOp && !["C", "±", "%", "."].includes(btn);
           
           return (
             <button
               key={i}
               onClick={() => {
-                if (isNumber) inputDigit(btn);
-                else if (btn === ".") inputDecimal();
+                if (isNum) inputDigit(btn);
                 else if (btn === "C") clear();
-                else if (btn === "±") setDisplay((parseFloat(display) * -1).toString());
-                else if (btn === "%") setDisplay((parseFloat(display) / 100).toString());
+                else if (btn === ".") setDisplay(d => d.includes(".") ? d : d + ".");
+                else if (btn === "±") setDisplay(d => (parseFloat(d) * -1).toString());
+                else if (btn === "%") setDisplay(d => (parseFloat(d) / 100).toString());
                 else if (btn === "=") calculate();
                 else performOp(btn);
               }}
               className={`
-                ${isNumber ? "bg-gray-700 hover:bg-gray-600 active:bg-gray-500" : "bg-orange-500 hover:bg-orange-400 active:bg-orange-300 text-white"}
-                aspect-square rounded-xl text-2xl font-semibold transition-colors active:scale-95
+                aspect-square rounded-2xl text-xl font-semibold transition-all active:scale-95
+                ${isOp ? "bg-gradient-to-br from-orange-400 to-orange-500 text-white hover:from-orange-500 hover:to-orange-600" : 
+                  btn === "C" ? "bg-slate-700 text-slate-300" :
+                  "bg-white/10 hover:bg-white/20 text-white"}
               `}
             >
               {btn}
@@ -257,38 +357,37 @@ function CalculatorTool() {
   );
 }
 
-// Ruler Tool (Visual)
+// Ruler Tool
 function RulerTool() {
-  const [length, setLength] = useState(15);
-  
-  const pxPerCm = 38;
-  
+  const [cm, setCm] = useState(15);
+  const pxPerCm = 40;
+
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 px-4">
-      <div className="flex items-center gap-2 flex-wrap justify-center">
-        <button onClick={() => setLength(Math.max(5, length - 5))} className="px-3 py-2 bg-gray-700 rounded-xl">-5</button>
-        <button onClick={() => setLength(Math.max(1, length - 1))} className="px-3 py-2 bg-gray-700 rounded-xl">-</button>
-        <div className="text-2xl font-bold w-24 text-center">{length} cm</div>
-        <button onClick={() => setLength(Math.min(50, length + 1))} className="px-3 py-2 bg-gray-700 rounded-xl">+</button>
-        <button onClick={() => setLength(Math.min(50, length + 5))} className="px-3 py-2 bg-gray-700 rounded-xl">+5</button>
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-6">
+      <div className="flex items-center gap-3">
+        <button onClick={() => setCm(Math.max(5, cm - 5))} className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-xl text-lg font-bold backdrop-blur">-5</button>
+        <button onClick={() => setCm(Math.max(1, cm - 1))} className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-xl text-lg font-bold backdrop-blur">-</button>
+        <div className="text-2xl font-bold w-20 text-center">{cm} cm</div>
+        <button onClick={() => setCm(Math.min(50, cm + 1))} className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-xl text-lg font-bold backdrop-blur">+</button>
+        <button onClick={() => setCm(Math.min(50, cm + 5))} className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-xl text-lg font-bold backdrop-blur">+5</button>
       </div>
 
-      <div className="overflow-x-auto w-full max-w-lg">
-        <div className="inline-block min-w-full" style={{ width: length * pxPerCm }}>
-          <div className="h-20 bg-gray-100 rounded-lg border-2 border-gray-400 relative overflow-hidden">
-            {Array.from({ length: length + 1 }).map((_, i) => (
+      <div className="w-full overflow-x-auto pb-4">
+        <div className="inline-block" style={{ width: cm * pxPerCm }}>
+          <div className="h-24 bg-white rounded-lg border-2 border-slate-300 relative overflow-hidden shadow-lg">
+            {Array.from({ length: cm + 1 }).map((_, i) => (
               <div key={i} className="absolute top-0 h-full flex flex-col">
-                <div className="w-px h-full bg-gray-800" />
-                <span className="text-xs text-gray-600 absolute top-1 left-0.5">{i}</span>
+                <div className="w-px h-full bg-slate-800" />
+                <span className="text-xs text-slate-600 absolute top-1 left-0.5">{i}</span>
               </div>
             ))}
-            {Array.from({ length: length * 10 }).map((_, i) => {
+            {Array.from({ length: cm * 10 }).map((_, i) => {
               if (i % 10 === 0) return null;
               const mm = i % 10;
               return (
                 <div
                   key={i}
-                  className="absolute top-0 bg-gray-600"
+                  className="absolute top-0 bg-slate-500"
                   style={{
                     left: `${(i / 10) * pxPerCm}px`,
                     width: '1px',
@@ -301,272 +400,74 @@ function RulerTool() {
         </div>
       </div>
 
-      <p className="text-gray-400 text-sm text-center">
-        Place your phone against an object to measure
-      </p>
+      <p className="text-slate-400 text-sm text-center">Place your device against an object to measure</p>
     </div>
   );
 }
 
-// AR Protractor Tool - tap 3 points to measure angle
-function ARProtractorTool() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [points, setPoints] = useState<{ x: number; y: number }[]>([]);
-  const [angle, setAngle] = useState<number | null>(null);
-  const [cameraReady, setCameraReady] = useState(false);
-  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-
-  const startCamera = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode, width: 1280, height: 720 }
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraReady(true);
-      }
-    } catch (err) {
-      setCameraReady(false);
-    }
-  }, [facingMode]);
-
-  useEffect(() => {
-    startCamera();
-    return () => {
-      if (videoRef.current?.srcObject) {
-        (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-      }
-    };
-  }, [startCamera]);
-
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    if (points.length >= 3) {
-      setPoints([{ x, y }]);
-      setAngle(null);
-    } else {
-      const newPoints = [...points, { x, y }];
-      setPoints(newPoints);
-      
-      if (newPoints.length === 3) {
-        // Calculate angle at point 2 (middle point)
-        const p1 = newPoints[0];
-        const p2 = newPoints[1];
-        const p3 = newPoints[2];
-        
-        const v1 = { x: p1.x - p2.x, y: p1.y - p2.y };
-        const v2 = { x: p3.x - p2.x, y: p3.y - p2.y };
-        
-        const dot = v1.x * v2.x + v1.y * v2.y;
-        const mag1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
-        const mag2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
-        
-        const cosAngle = dot / (mag1 * mag2);
-        const angleRad = Math.acos(Math.max(-1, Math.min(1, cosAngle)));
-        const angleDeg = (angleRad * 180) / Math.PI;
-        setAngle(angleDeg);
-      }
-    }
-  };
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw lines between points
-    if (points.length >= 2) {
-      ctx.strokeStyle = "#fbbf24";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
-      }
-      ctx.stroke();
-    }
-    
-    // Draw points
-    points.forEach((p, i) => {
-      const colors = ["#22c55e", "#fbbf24", "#ef4444"];
-      ctx.fillStyle = colors[i] || "#ffffff";
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "white";
-      ctx.font = "bold 12px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(String.fromCharCode(65 + i), p.x, p.y + 4); // A, B, C
-    });
-    
-    // Draw angle arc at middle point if we have 3 points
-    if (points.length === 3 && angle !== null) {
-      const p = points[1];
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 40, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,0,0,0.7)";
-      ctx.fill();
-      ctx.fillStyle = "#fbbf24";
-      ctx.font = "bold 16px sans-serif";
-      ctx.fillText(`${angle.toFixed(1)}°`, p.x, p.y + 5);
-    }
-  }, [points, angle]);
-
-  const clearPoints = () => {
-    setPoints([]);
-    setAngle(null);
-  };
-
-  return (
-    <div className="flex flex-col h-full">
-      <div className="relative flex-1 bg-black">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <canvas
-          ref={canvasRef}
-          width={640}
-          height={480}
-          onClick={handleCanvasClick}
-          className="absolute inset-0 w-full h-full cursor-crosshair"
-        />
-        
-        <div className="absolute top-4 left-4 right-4 flex justify-between">
-          <div className="bg-black/50 px-3 py-1 rounded text-sm">
-            {points.length < 3 ? `Tap point ${points.length + 1} (A, B, C)` : "Tap to restart"}
-          </div>
-          <button
-            onClick={() => setFacingMode(facingMode === "environment" ? "user" : "environment")}
-            className="bg-black/50 px-3 py-1 rounded text-sm"
-          >
-            Flip
-          </button>
-        </div>
-        
-        {angle !== null && (
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-black/70 px-6 py-3 rounded-xl">
-            <div className="text-4xl font-bold text-yellow-400 text-center">{angle.toFixed(1)}°</div>
-            <div className="text-xs text-gray-400 text-center">Angle at point B</div>
-          </div>
-        )}
-      </div>
-      
-      <div className="p-4 bg-gray-800">
-        <div className="flex gap-2">
-          <button onClick={clearPoints} className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-700 rounded-lg">
-            <Trash2 size={16} /> Clear
-          </button>
-          <button onClick={startCamera} className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-700 rounded-lg">
-            <Camera size={16} /> Restart
-          </button>
-        </div>
-        <p className="text-gray-400 text-xs text-center mt-2">
-          Tap 3 points: A → B → C to measure angle at B
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// Enhanced AR Ruler - tries WebXR Depth API first, falls back to estimation
+// AR Ruler Tool - Camera based
 function ARRulerTool() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [points, setPoints] = useState<{ x: number; y: number; depth?: number }[]>([]);
+  const [points, setPoints] = useState<{x: number; y: number}[]>([]);
   const [distance, setDistance] = useState<number | null>(null);
-  const [knownObjectSize, setKnownObjectSize] = useState(10);
+  const [refSize, setRefSize] = useState(10); // cm
   const [cameraReady, setCameraReady] = useState(false);
-  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-  const [useDepthAPI, setUseDepthAPI] = useState(false);
-  const [depthSupported, setDepthSupported] = useState(false);
-  const depthRef = useRef<any>(null);
-
-  const startCamera = useCallback(async () => {
-    try {
-      // Check for WebXR depth API
-      if ('xr' in navigator) {
-        const supported = await (navigator as any).xr?.isSessionSupported?.('immersive-ar');
-        if (supported) {
-          setDepthSupported(true);
-        }
-      }
-      
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode, width: 1280, height: 720 }
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraReady(true);
-      }
-    } catch (err) {
-      setCameraReady(false);
-    }
-  }, [facingMode]);
+  const [useFront, setUseFront] = useState(false);
 
   useEffect(() => {
-    startCamera();
-    return () => {
-      if (videoRef.current?.srcObject) {
-        (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+    let stream: MediaStream;
+    
+    const startCamera = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: useFront ? "user" : "environment", width: 1280, height: 720 }
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          setCameraReady(true);
+        }
+      } catch {
+        setCameraReady(false);
       }
     };
-  }, [startCamera]);
+    
+    startCamera();
+    return () => { if (stream) stream.getTracks().forEach(t => t.stop()); };
+  }, [useFront]);
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    const newPoint = { x, y };
-    
     if (points.length >= 2) {
-      setPoints([newPoint]);
+      setPoints([{x, y}]);
       setDistance(null);
     } else {
-      setPoints([...points, newPoint]);
+      setPoints(prev => [...prev, {x, y}]);
     }
   };
 
   useEffect(() => {
-    if (points.length === 2 && videoRef.current && videoRef.current.videoWidth > 0) {
-      const dx = (points[1].x - points[0].x) * (videoRef.current.videoWidth / 640);
-      const dy = (points[1].y - points[0].y) * (videoRef.current.videoHeight / 480);
-      const pixelDistance = Math.sqrt(dx * dx + dy * dy);
-      
-      if (useDepthAPI && depthRef.current) {
-        // Use depth API for real measurement
-        // This would require WebXR setup
-      }
-      
-      // Estimation using focal length
-      const focalLength = 800;
-      const estimatedCm = (knownObjectSize * focalLength) / Math.max(pixelDistance, 1);
-      setDistance(Math.min(estimatedCm, 500));
+    if (points.length === 2 && videoRef.current?.videoWidth) {
+      const dx = points[1].x - points[0].x;
+      const dy = points[1].y - points[0].y;
+      const px = Math.sqrt(dx*dx + dy*dy);
+      const focal = 800;
+      const cmVal = (refSize * focal) / px;
+      setDistance(cmVal);
     }
-  }, [points, knownObjectSize, useDepthAPI]);
 
-  useEffect(() => {
+    // Draw
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
+    if (!canvas || !ctx || !videoRef.current) return;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw line
     if (points.length === 2) {
       ctx.strokeStyle = "#fbbf24";
       ctx.lineWidth = 3;
@@ -575,36 +476,32 @@ function ARRulerTool() {
       ctx.lineTo(points[1].x, points[1].y);
       ctx.stroke();
       
-      // Draw distance label
-      const midX = (points[0].x + points[1].x) / 2;
-      const midY = (points[0].y + points[1].y) / 2;
-      if (distance !== null) {
+      const mx = (points[0].x + points[1].x) / 2;
+      const my = (points[0].y + points[1].y) / 2;
+      
+      if (distance) {
         ctx.fillStyle = "rgba(0,0,0,0.7)";
-        ctx.fillRect(midX - 50, midY - 25, 100, 35);
+        ctx.fillRect(mx - 50, my - 25, 100, 40);
         ctx.fillStyle = "#fbbf24";
         ctx.font = "bold 18px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(`${(distance / 100).toFixed(2)}m`, midX, midY);
+        ctx.fillText(`${(distance / 100).toFixed(2)}m`, mx, my + 6);
       }
     }
     
-    // Draw points
     points.forEach((p, i) => {
       ctx.fillStyle = i === 0 ? "#22c55e" : "#ef4444";
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
       ctx.fill();
     });
   }, [points, distance]);
 
-  const clearPoints = () => {
-    setPoints([]);
-    setDistance(null);
-  };
+  const clear = () => { setPoints([]); setDistance(null); };
 
   return (
     <div className="flex flex-col h-full">
-      <div className="relative flex-1 bg-black">
+      <div className="relative flex-1 bg-black min-h-[300px]">
         <video
           ref={videoRef}
           autoPlay
@@ -615,114 +512,147 @@ function ARRulerTool() {
         <canvas
           ref={canvasRef}
           width={640}
-          height={480}
-          onClick={handleCanvasClick}
+          height={360}
+          onClick={handleClick}
           className="absolute inset-0 w-full h-full cursor-crosshair"
         />
         
-        <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
-          <div className="bg-black/50 px-3 py-1 rounded text-sm">
+        <div className="absolute top-3 left-3 right-3 flex justify-between">
+          <span className="bg-black/50 px-3 py-1 rounded-full text-sm backdrop-blur">
             {points.length < 2 ? `Tap point ${points.length + 1}` : "Tap to restart"}
-          </div>
-          <div className="flex gap-2">
-            {depthSupported && (
-              <button
-                onClick={() => setUseDepthAPI(!useDepthAPI)}
-                className={`px-3 py-1 rounded text-sm ${useDepthAPI ? "bg-green-500" : "bg-black/50"}`}
-              >
-                {useDepthAPI ? "Depth ON" : "Depth OFF"}
-              </button>
-            )}
-            <button
-              onClick={() => { setFacingMode(facingMode === "environment" ? "user" : "environment"); startCamera(); }}
-              className="bg-black/50 px-3 py-1 rounded text-sm"
-            >
-              Flip
-            </button>
-          </div>
+          </span>
+          <button
+            onClick={() => setUseFront(!useFront)}
+            className="bg-black/50 px-3 py-1 rounded-full text-sm backdrop-blur"
+          >
+            {useFront ? "Back" : "Front"} cam
+          </button>
         </div>
         
-        {!depthSupported && (
-          <div className="absolute top-16 left-4 right-4">
-            <div className="bg-yellow-500/80 px-3 py-1 rounded text-sm text-black text-center">
-              LiDAR not available - using estimation
+        {!cameraReady && (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
+            <div className="text-center">
+              <Camera size={48} className="mx-auto mb-2 opacity-50" />
+              <p className="text-slate-400">Camera unavailable</p>
             </div>
           </div>
         )}
       </div>
       
-      <div className="p-4 bg-gray-800 space-y-3">
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-400 whitespace-nowrap">Reference:</label>
+      <div className="p-4 bg-slate-800/80 space-y-3 backdrop-blur">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-slate-400 whitespace-nowrap">Reference:</span>
           <input
             type="range"
             min="1"
             max="30"
-            value={knownObjectSize}
-            onChange={(e) => setKnownObjectSize(parseInt(e.target.value))}
-            className="flex-1"
+            value={refSize}
+            onChange={(e) => setRefSize(Number(e.target.value))}
+            className="flex-1 accent-orange-400"
           />
-          <span className="w-12 text-right">{knownObjectSize}cm</span>
+          <span className="w-12 text-right font-mono">{refSize}cm</span>
         </div>
-        <div className="flex gap-2">
-          <button onClick={clearPoints} className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-700 rounded-lg">
-            <Trash2 size={16} /> Clear
-          </button>
-          <button onClick={startCamera} className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-700 rounded-lg">
-            <Camera size={16} /> Restart
-          </button>
-        </div>
-        <p className="text-gray-400 text-xs text-center">
-          {depthSupported ? "Tap 2 points for real LiDAR measurement" : "Tap 2 points - set reference size for estimation"}
-        </p>
+        <button
+          onClick={clear}
+          className="w-full flex items-center justify-center gap-2 py-3 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur"
+        >
+          <Trash2 size={18} /> Clear
+        </button>
       </div>
     </div>
   );
 }
 
-type Tool = "flashlight" | "level" | "calculator" | "ruler" | "arruler" | "arprotractor";
+// Protractor Tool
+function ProtractorTool() {
+  const [angle, setAngle] = useState(0);
+  const [calibrated, setCalibrated] = useState(0);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const calibratedRef = useRef(0);
 
-const tools: { id: Tool; label: string; icon: React.ReactNode }[] = [
-  { id: "flashlight", label: "Light", icon: <Flashlight size={20} /> },
-  { id: "level", label: "Level", icon: <Compass size={20} /> },
-  { id: "arprotractor", label: "Angle", icon: <Move size={20} /> },
-  { id: "calculator", label: "Calc", icon: <Calculator size={20} /> },
-  { id: "ruler", label: "Ruler", icon: <Ruler size={20} /> },
-  { id: "arruler", label: "AR Measure", icon: <Camera size={20} /> },
-];
+  useEffect(() => {
+    const handler = (e: DeviceOrientationEvent) => {
+      if (e.alpha === null) return;
+      let a = e.alpha - calibratedRef.current;
+      if (a < 0) a += 360;
+      if (a > 180) a -= 360;
+      setAngle(a);
+      setHasPermission(true);
+    };
+    
+    window.addEventListener("deviceorientation", handler);
+    return () => window.removeEventListener("deviceorientation", handler);
+  }, []);
 
-export default function Multitool() {
-  const [activeTool, setActiveTool] = useState<Tool>("level");
+  const calibrate = () => {
+    const handler = (e: DeviceOrientationEvent) => {
+      if (e.alpha !== null) {
+        calibratedRef.current = e.alpha;
+        setCalibrated(e.alpha);
+        window.removeEventListener("deviceorientation", handler);
+      }
+    };
+    window.addEventListener("deviceorientation", handler);
+    setTimeout(() => window.removeEventListener("deviceorientation", handler), 100);
+  };
+
+  const absAngle = Math.abs(angle);
+  const color = absAngle < 2 ? "text-green-400" : absAngle < 10 ? "text-yellow-400" : "text-red-400";
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-      <header className="p-3 border-b border-gray-800">
-        <h1 className="text-lg font-bold text-center">Multitool</h1>
-      </header>
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-6">
+      {hasPermission === false ? (
+        <div className="text-center text-slate-400">
+          <Move size={48} className="mx-auto mb-4 opacity-50" />
+          <p>Compass not available</p>
+        </div>
+      ) : (
+        <>
+          {/* Visual arc */}
+          <div className="relative w-64">
+            <svg viewBox="0 0 200 110" className="w-full">
+              <path d="M 10 100 A 90 90 0 0 1 190 100" fill="none" stroke="#374151" strokeWidth="8" />
+              {Array.from({length: 37}).map((_, i) => {
+                const deg = i * 5;
+                const rad = (deg - 90) * Math.PI / 180;
+                const x1 = 100 + 80 * Math.cos(rad);
+                const y1 = 100 + 80 * Math.sin(rad);
+                const x2 = 100 + (deg % 30 === 0 ? 65 : 72) * Math.cos(rad);
+                const y2 = 100 + (deg % 30 === 0 ? 65 : 72) * Math.sin(rad);
+                return (
+                  <g key={deg}>
+                    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#6b7280" strokeWidth={deg % 90 === 0 ? 2 : 1} />
+                    {deg % 30 === 0 && (
+                      <text x={100 + 52 * Math.cos(rad)} y={100 + 52 * Math.sin(rad)} fill="#9ca3af" fontSize="8" textAnchor="middle" dominantBaseline="middle">
+                        {deg}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+              <line
+                x1="100" y1="100"
+                x2={100 + 70 * Math.cos((angle - 90) * Math.PI / 180)}
+                y2={100 + 70 * Math.sin((angle - 90) * Math.PI / 180)}
+                stroke="#fbbf24" strokeWidth="3"
+              />
+              <circle cx="100" cy="100" r="5" fill="#fbbf24" />
+            </svg>
+          </div>
 
-      <nav className="flex border-b border-gray-800">
-        {tools.map((tool) => (
+          <div className="text-center">
+            <div className={`text-6xl font-mono font-bold ${color}`}>{angle.toFixed(1)}°</div>
+            <div className="text-slate-400 mt-2">{absAngle < 2 ? "Perfect angle!" : `${absAngle.toFixed(1)}° off`}</div>
+          </div>
+
           <button
-            key={tool.id}
-            onClick={() => setActiveTool(tool.id)}
-            className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${
-              activeTool === tool.id ? "bg-gray-800 text-yellow-400" : "text-gray-400 hover:text-white"
-            }`}
+            onClick={calibrate}
+            className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl backdrop-blur"
           >
-            {tool.icon}
-            <span className="text-xs">{tool.label}</span>
+            <RotateCcw size={18} /> Calibrate
           </button>
-        ))}
-      </nav>
-
-      <main className="flex-1">
-        {activeTool === "flashlight" && <FlashlightTool />}
-        {activeTool === "level" && <SpiritLevelTool />}
-        {activeTool === "arprotractor" && <ARProtractorTool />}
-        {activeTool === "calculator" && <CalculatorTool />}
-        {activeTool === "ruler" && <RulerTool />}
-        {activeTool === "arruler" && <ARRulerTool />}
-      </main>
+        </>
+      )}
     </div>
   );
 }
