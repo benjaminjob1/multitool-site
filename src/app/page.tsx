@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Flashlight, Compass, Calculator, Ruler, RotateCcw, Camera, Move, Trash2, Settings, X, RefreshCw } from "lucide-react";
+import { Flashlight, Compass, Calculator, Ruler, RotateCcw, Camera, Move, Trash2, Settings, X, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
 
 interface ToolSettings { accent: string; glow: string; brightness: number; }
 
@@ -12,11 +12,10 @@ export default function Multitool() {
 
   useEffect(() => { const s = localStorage.getItem("mt-settings"); if (s) try { setSettings(JSON.parse(s)); } catch {} }, []);
   const saveSettings = (k: keyof ToolSettings, v: string | number) => { const n = {...settings, [k]: v}; setSettings(n); localStorage.setItem("mt-settings", JSON.stringify(n)); };
-
   const switchTool = (id: string) => { if (id === activeTool) return; setAnimating(true); setTimeout(() => { setActiveTool(id); setAnimating(false); }, 150); };
 
   return (
-    <div className="min-h-screen text-white overflow-hidden" style={{ backgroundColor: `rgb(0,0,0)`, filter: `brightness(${settings.brightness})` }}>
+    <div className="min-h-screen text-white overflow-hidden" style={{ backgroundColor: "rgb(0,0,0)", filter: `brightness(${settings.brightness})` }}>
       {showSettings && (
         <div className="fixed inset-0 z-50 flex items-end justify-end p-4">
           <div className="w-72 rounded-2xl p-5 border backdrop-blur-xl" style={{ backgroundColor: "rgba(10,10,10,0.98)", borderColor: "rgba(255,255,255,0.08)" }}>
@@ -64,8 +63,7 @@ export default function Multitool() {
       <main className={`relative z-10 transition-all duration-300 ${animating ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}>
         <div className="rounded-3xl mx-4 overflow-hidden border" style={{ backgroundColor: "rgba(8,8,8,0.95)", borderColor: "rgba(255,255,255,0.05)", boxShadow: `0 0 80px ${settings.glow}11` }}>
           {activeTool === "flashlight" && <FlashlightTool s={settings} />}
-          {activeTool === "level" && <LevelTool s={settings} />}
-          {activeTool === "protractor" && <ProtractorTool s={settings} />}
+          {activeTool === "level" && <LevelAngleTool s={settings} />}
           {activeTool === "calculator" && <CalculatorTool s={settings} />}
           {activeTool === "ruler" && <RulerTool />}
           {activeTool === "arruler" && <ARRulerTool s={settings} />}
@@ -74,7 +72,7 @@ export default function Multitool() {
 
       <nav className="relative z-20 p-4 pb-6">
         <div className="rounded-2xl p-2 flex justify-around border" style={{ backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)" }}>
-          {[{id:"flashlight",l:"Light",i:<Flashlight size={20} />},{id:"level",l:"Level",i:<Compass size={20} />},{id:"protractor",l:"Angle",i:<Move size={20} />},{id:"calculator",l:"Calc",i:<Calculator size={20} />},{id:"ruler",l:"Ruler",i:<Ruler size={20} />},{id:"arruler",l:"Measure",i:<Camera size={20} />}].map(t => (
+          {[{id:"flashlight",l:"Light",i:<Flashlight size={20} />},{id:"level",l:"Level",i:<Compass size={20} />},{id:"calculator",l:"Calc",i:<Calculator size={20} />},{id:"ruler",l:"Ruler",i:<Ruler size={20} />},{id:"arruler",l:"Measure",i:<Camera size={20} />}].map(t => (
             <button key={t.id} onClick={() => switchTool(t.id)} className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all" style={activeTool === t.id ? {background:`linear-gradient(to bottom,${settings.accent}22,${settings.glow}11)`,color:"white"} : {color:"rgba(255,255,255,0.35)"}}>
               <span style={activeTool === t.id ? {color:settings.accent,transform:"scale(1.1)"} : {}}>{t.i}</span>
               <span className="text-[10px] font-medium">{t.l}</span>
@@ -82,6 +80,143 @@ export default function Multitool() {
           ))}
         </div>
       </nav>
+    </div>
+  );
+}
+
+// Combined Level + Angle Tool
+function LevelAngleTool({s}: {s: ToolSettings}) {
+  const [mode, setMode] = useState<"spirit"|"plumb">("spirit");
+  const [roll, setRoll] = useState(0);
+  const [pitch, setPitch] = useState(0);
+  const [angle, setAngle] = useState(0);
+  const [perm, setPerm] = useState<boolean|null>(null);
+  const [req, setReq] = useState(false);
+  const calRef = useRef({roll:0, pitch:0, angle:0});
+
+  const reqPerm = async () => {
+    setReq(true);
+    if (typeof DeviceOrientationEvent !== "undefined" && typeof (DeviceOrientationEvent as any).requestPermission === "function") {
+      try { const p = await (DeviceOrientationEvent as any).requestPermission(); setPerm(p === "granted"); } catch { setPerm(false); }
+    } else { setPerm(true); }
+    setReq(false);
+  };
+
+  useEffect(() => {
+    if (!perm) return;
+    const h = (e: DeviceOrientationEvent) => {
+      if (e.gamma === null && e.alpha === null) return;
+      if (e.gamma !== null) {
+        setRoll(e.gamma - calRef.current.roll);
+        setPitch((e.beta ?? 0) - calRef.current.pitch);
+      }
+      if (e.alpha !== null) {
+        let a = e.alpha - calRef.current.angle;
+        if (a < 0) a += 360;
+        if (a > 180) a -= 360;
+        setAngle(a);
+      }
+      setPerm(true);
+    };
+    window.addEventListener("deviceorientation", h, true);
+    return () => window.removeEventListener("deviceorientation", h, true);
+  }, [perm]);
+
+  const calibrate = () => { calRef.current = { roll, pitch, angle }; };
+
+  const off = Math.sqrt(roll*roll + pitch*pitch);
+  const lvl = off < 2;
+  const col = lvl ? "#22c55e" : off < 5 ? s.accent : "#ef4444";
+  const absAngle = Math.abs(angle);
+  const angCol = absAngle < 2 ? "#22c55e" : absAngle < 10 ? s.accent : "#ef4444";
+
+  if (perm === null) return (
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => setMode("spirit")} className="px-4 py-2 rounded-lg border transition-all" style={mode === "spirit" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+          <Compass size={20} /><span className="ml-2">Spirit Level</span>
+        </button>
+        <button onClick={() => setMode("plumb")} className="px-4 py-2 rounded-lg border transition-all" style={mode === "plumb" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+          <Move size={20} /><span className="ml-2">Plumb/Angle</span>
+        </button>
+      </div>
+      <Move size={48} style={{color:"rgba(255,255,255,0.2)"}} />
+      <p style={{color:"rgba(255,255,255,0.4)"}}>Motion permission required</p>
+      <button onClick={reqPerm} disabled={req} className="px-6 py-2 rounded-full font-semibold border" style={{backgroundColor:`${s.accent}18`,borderColor:`${s.accent}50`,color:s.accent}}>
+        {req ? "..." : "Enable Motion Sensors"}
+      </button>
+    </div>
+  );
+
+  if (perm === false) return (
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => setMode("spirit")} className="px-4 py-2 rounded-lg border" style={mode === "spirit" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+          <Compass size={20} /><span className="ml-2">Spirit Level</span>
+        </button>
+        <button onClick={() => setMode("plumb")} className="px-4 py-2 rounded-lg border" style={mode === "plumb" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+          <Move size={20} /><span className="ml-2">Plumb/Angle</span>
+        </button>
+      </div>
+      <Move size={48} style={{color:"rgba(239,68,68,0.5)"}} />
+      <p style={{color:"#ef4444"}}>Motion sensors denied</p>
+      <p className="text-sm" style={{color:"rgba(255,255,255,0.4)"}}>Enable in Settings &gt; Safari &gt; Motion</p>
+    </div>
+  );
+
+  return (
+    <div className="p-4 flex flex-col items-center">
+      {/* Mode selector */}
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => setMode("spirit")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "spirit" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+          <Compass size={18} />Spirit Level
+        </button>
+        <button onClick={() => setMode("plumb")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "plumb" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+          <Move size={18} />Plumb/Angle
+        </button>
+      </div>
+
+      {mode === "spirit" ? (
+        /* Spirit Level UI */
+        <div className="flex flex-col items-center gap-4 w-full">
+          <div className="relative w-52 h-52 rounded-full border overflow-hidden" style={{backgroundColor:"rgba(12,12,12,0.9)",borderColor:"rgba(255,255,255,0.08)"}}>
+            <div className="absolute inset-0 flex items-center justify-center"><div className="w-full h-px" style={{backgroundColor:"rgba(255,255,255,0.06)"}} /><div className="absolute inset-0 flex flex-col items-center justify-center"><div className="h-full w-px" style={{backgroundColor:"rgba(255,255,255,0.06)"}} /></div></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border" style={{borderColor:"rgba(34,197,94,0.4)"}} />
+            <div className="absolute w-16 h-16 rounded-full transition-all duration-100" style={{background:`radial-gradient(circle at 30% 30%,${col}cc,${col})`,top:`calc(50% + ${Math.min(Math.max(pitch*3,-80),80)}px - 32px)`,left:`calc(50% + ${Math.min(Math.max(roll*3,-80),80)}px - 32px)`,boxShadow:`0 0 25px ${col}66`}} />
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-center w-full max-w-xs">
+            <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>Horizontal</div><div className="text-xl font-mono font-bold" style={{color:Math.abs(roll)<2?"#22c55e":"white"}}>{roll.toFixed(1)}°</div></div>
+            <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>Vertical</div><div className="text-xl font-mono font-bold" style={{color:Math.abs(pitch)<2?"#22c55e":"white"}}>{pitch.toFixed(1)}°</div></div>
+          </div>
+          <div className="text-2xl font-bold" style={{color:lvl?"#22c55e":"rgba(255,255,255,0.35)"}}>{lvl ? "LEVEL" : `${off.toFixed(1)}° off`}</div>
+          <button onClick={calibrate} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
+        </div>
+      ) : (
+        /* Plumb/Angle UI */
+        <div className="flex flex-col items-center gap-4 w-full">
+          <div className="relative w-64">
+            <svg viewBox="0 0 200 110" className="w-full">
+              <path d="M 10 100 A 90 90 0 0 1 190 100" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8"/>
+              {Array.from({length:37}).map((_, i) => {
+                const deg = i * 5;
+                const rad = (deg - 90) * Math.PI / 180;
+                const x1 = 100 + 80 * Math.cos(rad);
+                const y1 = 100 + 80 * Math.sin(rad);
+                const x2 = 100 + (deg % 30 === 0 ? 65 : 72) * Math.cos(rad);
+                const y2 = 100 + (deg % 30 === 0 ? 65 : 72) * Math.sin(rad);
+                return (<g key={deg}><line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.15)" strokeWidth={deg % 90 === 0 ? 2 : 1}/>{deg % 30 === 0 && (<text x={100 + 52 * Math.cos(rad)} y={100 + 52 * Math.sin(rad)} fill="rgba(255,255,255,0.4)" fontSize="8" textAnchor="middle" dominantBaseline="middle">{deg}</text>)}</g>);
+              })}
+              <line x1="100" y1="100" x2={100 + 70 * Math.cos((angle - 90) * Math.PI / 180)} y2={100 + 70 * Math.sin((angle - 90) * Math.PI / 180)} stroke={s.accent} strokeWidth="3"/>
+              <circle cx="100" cy="100" r="5" fill={s.accent}/>
+            </svg>
+          </div>
+          <div className="text-center">
+            <div className="text-5xl font-mono font-bold" style={{color:angCol}}>{angle.toFixed(1)}°</div>
+            <div className="mt-1" style={{color:"rgba(255,255,255,0.4)"}}>{absAngle < 2 ? "Plumb!" : `${absAngle.toFixed(1)}° off`}</div>
+          </div>
+          <button onClick={calibrate} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Calibrate</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -114,37 +249,10 @@ function FlashlightTool({s}: {s: ToolSettings}) {
   );
 }
 
-function LevelTool({s}: {s: ToolSettings}) {
-  const [roll, setRoll] = useState(0); const [pitch, setPitch] = useState(0); const [perm, setPerm] = useState<boolean|null>(null);
-  const calRef = useRef({roll:0, pitch:0});
-  useEffect(() => { const h = (e: DeviceOrientationEvent) => { if (e.gamma === null) return; setRoll(e.gamma - calRef.current.roll); setPitch((e.beta??0) - calRef.current.pitch); setPerm(true); }; window.addEventListener("deviceorientation", h, true); return () => window.removeEventListener("deviceorientation", h, true); }, []);
-  const cal = () => { calRef.current = {roll, pitch}; };
-  const off = Math.sqrt(roll*roll + pitch*pitch); const lvl = off < 2; const col = lvl ? "#22c55e" : off < 5 ? s.accent : "#ef4444";
-  return (
-    <div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-4">
-      {perm === false || perm === null ? (<div className="text-center" style={{color:"rgba(255,255,255,0.35)"}}><Compass size={48} className="mx-auto mb-4 opacity-40" /><p>Motion sensors not available</p></div>) : (
-        <>
-          <div className="relative w-52 h-52 rounded-full border overflow-hidden" style={{backgroundColor:"rgba(12,12,12,0.9)",borderColor:"rgba(255,255,255,0.08)"}}>
-            <div className="absolute inset-0 flex items-center justify-center"><div className="w-full h-px" style={{backgroundColor:"rgba(255,255,255,0.06)"}} /><div className="absolute inset-0 flex flex-col items-center justify-center"><div className="h-full w-px" style={{backgroundColor:"rgba(255,255,255,0.06)"}} /></div></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border" style={{borderColor:"rgba(34,197,94,0.4)"}} />
-            <div className="absolute w-16 h-16 rounded-full transition-all duration-100" style={{background:`radial-gradient(circle at 30% 30%,${col}cc,${col})`,top:`calc(50% + ${Math.min(Math.max(pitch*3,-80),80)}px - 32px)`,left:`calc(50% + ${Math.min(Math.max(roll*3,-80),80)}px - 32px)`,boxShadow:`0 0 25px ${col}66`}} />
-          </div>
-          <div className="grid grid-cols-2 gap-6 text-center">
-            <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>Horizontal</div><div className="text-2xl font-mono font-bold" style={{color:Math.abs(roll)<2?"#22c55e":"white"}}>{roll.toFixed(1)}°</div></div>
-            <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>Vertical</div><div className="text-2xl font-mono font-bold" style={{color:Math.abs(pitch)<2?"#22c55e":"white"}}>{pitch.toFixed(1)}°</div></div>
-          </div>
-          <div className="text-3xl font-bold" style={{color:lvl?"#22c55e":"rgba(255,255,255,0.35)"}}>{lvl ? "LEVEL" : `${off.toFixed(1)}° off`}</div>
-          <button onClick={cal} className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
-        </>
-      )}
-    </div>
-  );
-}
-
 function CalculatorTool({s}: {s: ToolSettings}) {
   const [d, setD] = useState("0"); const [p, setP] = useState<string|null>(null); const [o, setO] = useState<string|null>(null); const [w, setW] = useState(false);
   const clr = () => { setD("0"); setP(null); setO(null); setW(false); };
-  const calc = () => { if (!p || !o) return; const pr = parseFloat(p); const cu = parseFloat(d); let r = 0; switch(o) { case "+": r=pr+cu; break; case "-": r=pr-cu; break; case "*": r=pr*cu; break; case "/": r=cu!==0?pr/cu:0; break; } setD(r.toString().slice(0,12).replace(/\\.0+$/, "")); setP(null); setO(null); setW(true); };
+  const calc = () => { if (!p || !o) return; const pr = parseFloat(p); const cu = parseFloat(d); let r = 0; switch(o) { case "+": r=pr+cu; break; case "-": r=pr-cu; break; case "*": r=pr*cu; break; case "/": r=cu!==0?pr/cu:0; break; } setD(r.toString().slice(0,12).replace(/\.0+$/, "")); setP(null); setO(null); setW(true); };
   const op = (op: string) => { if (o && !w) calc(); setP(d); setO(op); setW(true); };
   const btns = [["C","±","%","÷"],["7","8","9","×"],["4","5","6","−"],["1","2","3","+"],["0",".","="]];
   const handle = (b: string) => { if (!isNaN(parseInt(b))) { if (w) { setD(b); setW(false); } else setD(d==="0"?b:d+b); } else if (b==="C") clr(); else if (b===".") setD(x=>x.includes(".")?x:x+"."); else if (b==="±") setD(x=>(parseFloat(x)*-1).toString()); else if (b==="%") setD(x=>(parseFloat(x)/100).toString()); else if (b==="=") calc(); else op(b); };
@@ -206,7 +314,8 @@ function ARRulerTool({s}: {s: ToolSettings}) {
           <span className="px-3 py-1 rounded-full text-sm backdrop-blur-md" style={{backgroundColor:"rgba(0,0,0,0.6)"}}>{pts.length<2?`Tap point ${pts.length+1}`:"Tap to restart"}</span>
           <div className="flex gap-2">{lidar&&<span className="px-2 py-1 rounded-full text-xs backdrop-blur-md" style={{backgroundColor:"rgba(34,197,94,0.7)"}}>LiDAR</span>}<button onClick={()=>setFront(!front)} className="px-3 py-1 rounded-full text-sm backdrop-blur-md" style={{backgroundColor:"rgba(0,0,0,0.6)"}}>{front?"Back":"Front"}</button></div>
         </div>
-        {err&&<div className="absolute inset-0 flex items-center justify-center" style={{backgroundColor:"rgba(5,5,5,0.97)"}}><div className="text-center"><Camera size={48} className="mx-auto mb-2 opacity-30" /><p className="text-red-400 text-sm">{err}</p><button onClick={startCam} className="mt-3 px-4 py-2 rounded-xl border border-white/10 text-sm hover:bg-white/5"><RefreshCw size={16} className="inline mr-1"/>Retry</button></div></div>}
+        {err&&<div className="absolute inset-0 flex items-center justify-center" style={{backgroundColor:"rgba(5,5,5,0.97)"}}><div className="text-center"><Camera size={48} className="mx-auto mb-2 opacity-30" /><p className="text-red-400 text-sm">{err}</p><button onClick={startCam} className="mt-3 px-4 py-2 rounded-xl border border-white/10 text-sm hover:bg-white
+/10 text-sm hover:bg-white/5"><RefreshCw size={16} className="inline mr-1"/>Retry</button></div></div>}
       </div>
       <div className="p-4 space-y-3 border-t" style={{backgroundColor:"rgba(8,8,8,0.98)",borderColor:"rgba(255,255,255,0.05)"}}>
         <div className="flex items-center gap-3"><span className="text-sm whitespace-nowrap" style={{color:"rgba(255,255,255,0.4)"}}>Reference:</span><input type="range" min="1" max="30" value={ref} onChange={e=>setRef(Number(e.target.value))} className="flex-1" style={{accentColor:s.accent}} /><span className="w-12 text-right font-mono">{ref}cm</span></div>
@@ -214,16 +323,4 @@ function ARRulerTool({s}: {s: ToolSettings}) {
       </div>
     </div>
   );
-}
-
-function ProtractorTool({s}: {s: ToolSettings}) {
-  const [angle, setAngle] = useState(0); const [perm, setPerm] = useState<boolean|null>(null); const [req, setReq] = useState(false);
-  const calRef = useRef(0);
-  const reqPerm = async () => { setReq(true); if(typeof DeviceOrientationEvent!=="undefined"&&typeof (DeviceOrientationEvent as any).requestPermission==="function"){try{const p=await (DeviceOrientationEvent as any).requestPermission();setPerm(p==="granted");}catch{setPerm(false);}}else{setPerm(true);} setReq(false); };
-  useEffect(() => { if(!perm) return; const h = (e: DeviceOrientationEvent) => { if(e.alpha===null) return; let a=e.alpha-calRef.current; if(a<0)a+=360; if(a>180)a-=360; setAngle(a); }; window.addEventListener("deviceorientation",h,true); return()=>window.removeEventListener("deviceorientation",h,true); }, [perm]);
-  const cal = () => { const h = (e: DeviceOrientationEvent) => { if(e.alpha!==null){calRef.current=e.alpha;window.removeEventListener("deviceorientation",h,true);} }; window.addEventListener("deviceorientation",h,true); setTimeout(()=>window.removeEventListener("deviceorientation",h,true),100); };
-  const abs = Math.abs(angle); const col = abs<2?"#22c55e":abs<10?s.accent:"#ef4444";
-  if(perm===null) return(<div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-6"><Move size={64} style={{color:"rgba(255,255,255,0.2)"}}/><p style={{color:"rgba(255,255,255,0.4)"}}>Motion permission required</p><button onClick={reqPerm} disabled={req} className="px-8 py-3 rounded-full font-semibold border transition-all" style={{backgroundColor:`${s.accent}18`,borderColor:`${s.accent}50`,color:s.accent}}>{req?"...":"Enable Motion Sensors"}</button></div>);
-  if(perm===false) return(<div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-6"><Move size={64} style={{color:"rgba(239,68,68,0.5)"}}/><p style={{color:"#ef4444"}}>Motion sensors denied</p><p className="text-sm" style={{color:"rgba(255,255,255,0.4)"}}>Enable in Settings &gt; Safari &gt; Motion</p></div>);
-  return(<div className="p-6 flex flex-col items-center justify-center min-h-[400px] gap-6"><div className="relative w-64"><svg viewBox="0 0 200 110" className="w-full"><path d="M 10 100 A 90 90 0 0 1 190 100" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8"/>{Array.from({length:37}).map((_,i)=>{const deg=i*5;const rad=(deg-90)*Math.PI/180;const x1=100+80*Math.cos(rad);const y1=100+80*Math.sin(rad);const x2=100+(deg%30===0?65:72)*Math.cos(rad);const y2=100+(deg%30===0?65:72)*Math.sin(rad);return(<g key={deg}><line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.15)" strokeWidth={deg%90===0?2:1}/>{deg%30===0&&(<text x={100+52*Math.cos(rad)} y={100+52*Math.sin(rad)} fill="rgba(255,255,255,0.4)" fontSize="8" textAnchor="middle" dominantBaseline="middle">{deg}</text>)}</g>);})}<line x1="100" y1="100" x2={100+70*Math.cos((angle-90)*Math.PI/180)} y2={100+70*Math.sin((angle-90)*Math.PI/180)} stroke={s.accent} strokeWidth="3"/><circle cx="100" cy="100" r="5" fill={s.accent}/></svg></div><div className="text-center"><div className="text-6xl font-mono font-bold" style={{color:col}}>{angle.toFixed(1)}°</div><div className="mt-2" style={{color:"rgba(255,255,255,0.4)"}}>{abs<2?"Perfect!":`${abs.toFixed(1)}° off`}</div></div><button onClick={cal} className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={18}/>Calibrate</button></div>);
 }
