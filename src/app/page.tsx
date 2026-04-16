@@ -94,7 +94,8 @@ function FlashlightTool() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
       const track = stream.getVideoTracks()[0];
-      if ('torch' in track.getCapabilities?.() ?? {}) {
+      const caps = track.getCapabilities?.();
+      if (caps && 'torch' in caps) {
         await track.applyConstraints({ advanced: [{ torch: true } as any] });
         streamRef.current = stream;
         setOn(true);
