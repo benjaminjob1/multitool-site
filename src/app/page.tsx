@@ -24,7 +24,7 @@ function FlashlightTool() {
       });
       
       const track = mediaStream.getVideoTracks()[0];
-      if (track.getCapabilities()?.torch) {
+      if (track.getCapabilities() && ('torch' in track.getCapabilities()!)) {
         await track.applyConstraints({ advanced: [{ torch: true } as any] });
         setStream(mediaStream);
         setOn(true);
