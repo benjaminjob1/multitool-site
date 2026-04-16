@@ -15,7 +15,7 @@ export default function Multitool() {
   const switchTool = (id: string) => { if (id === activeTool) return; setAnimating(true); setTimeout(() => { setActiveTool(id); setAnimating(false); }, 150); };
 
   return (
-    <div className="min-h-screen text-white overflow-hidden" style={{ backgroundColor: "rgb(0,0,0)", filter: `brightness(${settings.brightness})` }}>
+    <div className="min-h-screen text-white flex flex-col" style={{ backgroundColor: "rgb(0,0,0)", filter: `brightness(${settings.brightness})` }}>
       {showSettings && (
         <div className="fixed inset-0 z-50 flex items-end justify-end p-4">
           <div className="w-72 rounded-2xl p-5 border backdrop-blur-xl" style={{ backgroundColor: "rgba(10,10,10,0.98)", borderColor: "rgba(255,255,255,0.08)" }}>
@@ -55,12 +55,32 @@ export default function Multitool() {
         </div>
       )}
 
-      <header className="relative z-10 p-4 flex justify-between items-center">
+      <header className="relative z-10 p-4 flex justify-between items-center shrink-0">
         <h1 className="text-2xl font-bold" style={{ color: settings.accent }}>Multitool</h1>
         <button onClick={() => setShowSettings(true)} className="p-2 rounded-xl hover:bg-white/10"><Settings size={22} /></button>
       </header>
 
-      <main className={`relative z-10 transition-all duration-300 ${animating ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}>
+      <main className="flex-1 overflow-auto">
+        <div className="rounded-3xl mx-4 mb-4 overflow-hidden border" style={{ backgroundColor: "rgba(8,8,8,0.95)", borderColor: "rgba(255,255,255,0.05)", boxShadow: `0 0 80px ${settings.glow}11` }}>
+          {activeTool === "flashlight" && <FlashlightTool s={settings} />}
+          {activeTool === "level" && <LevelAngleTool s={settings} />}
+          {activeTool === "calculator" && <CalculatorTool s={settings} />}
+          {activeTool === "ruler" && <RulerTool />}
+          {activeTool === "arruler" && <ARRulerTool s={settings} />}
+        </div>
+      </main>
+
+      <nav className="sticky bottom-0 z-20 p-4 pb-6 shrink-0" style={{ backgroundColor: "rgba(0,0,0,0.95)" }}>
+        <div className="rounded-2xl p-2 flex justify-around border" style={{ backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)" }}>
+          {[{id:"flashlight",l:"Light",i:<Flashlight size={20} />},{id:"level",l:"Level",i:<Compass size={20} />},{id:"calculator",l:"Calc",i:<Calculator size={20} />},{id:"ruler",l:"Ruler",i:<Ruler size={20} />},{id:"arruler",l:"Measure",i:<Camera size={20} />}].map(t => (
+            <button key={t.id} onClick={() => switchTool(t.id)} className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all" style={activeTool === t.id ? {background:`linear-gradient(to bottom,${settings.accent}22,${settings.glow}11)`,color:"white"} : {color:"rgba(255,255,255,0.35)"}}>
+              <span style={activeTool === t.id ? {color:settings.accent,transform:"scale(1.1)"} : {}}>{t.i}</span>
+              <span className="text-[10px] font-medium">{t.l}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+// <main className={`relative z-10 transition-all duration-300 ${animating ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}>
         <div className="rounded-3xl mx-4 overflow-hidden border" style={{ backgroundColor: "rgba(8,8,8,0.95)", borderColor: "rgba(255,255,255,0.05)", boxShadow: `0 0 80px ${settings.glow}11` }}>
           {activeTool === "flashlight" && <FlashlightTool s={settings} />}
           {activeTool === "level" && <LevelAngleTool s={settings} />}
