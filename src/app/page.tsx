@@ -207,7 +207,10 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
             <div className="text-5xl font-mono font-bold" style={{color:angCol}}>{angle.toFixed(1)}°</div>
             <div className="mt-1" style={{color:"rgba(255,255,255,0.4)"}}>{absAngle < 2 ? "Plumb!" : `${absAngle.toFixed(1)}° off`}</div>
           </div>
-          <button onClick={(e) => { e.stopPropagation(); resetAngle(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
+          <div className="flex gap-2">
+            <button onClick={(e) => { e.stopPropagation(); calibrateAngle(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
+            <button onClick={(e) => { e.stopPropagation(); resetAngle(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
+          </div>
         </div>
       )}
     </div>
