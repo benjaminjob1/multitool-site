@@ -70,7 +70,7 @@ export default function Multitool() {
         </div>
       </main>
 
-      <button onClick={() => setShowNav(!showNav)} className="fixed z-30 p-2 rounded-xl border" style={{ bottom: "inherit", top: "1rem", right: "0.5rem", backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)" }}>
+      <button onClick={() => setShowNav(!showNav)} className="fixed z-30 p-2 rounded-xl border" style={{ bottom: "inherit", top: "1rem", left: "0.5rem", backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)" }}>
         {showNav ? <EyeOff size={20} /> : <Eye size={20} />}
       </button>
 
@@ -183,7 +183,7 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
             <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>Horizontal</div><div className="text-xl font-mono font-bold" style={{color:Math.abs(roll)<2?"#22c55e":"white"}}>{roll.toFixed(1)}°</div></div>
             <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>Vertical</div><div className="text-xl font-mono font-bold" style={{color:Math.abs(pitch)<2?"#22c55e":"white"}}>{pitch.toFixed(1)}°</div></div>
           </div>
-          <div className="text-2xl font-bold" style={{color:lvl?"#22c55e":"rgba(255,255,255,0.35)"}}>{lvl ? "LEVEL" : ""}</div>
+          <div className="text-2xl font-bold" style={{color:lvl?"#22c55e":"rgba(255,255,255,0.35)"}}>{lvl ? "LEVEL" : `${off.toFixed(1)}° off`}</div>
           <div className="flex gap-2">
             <button onClick={(e) => { e.stopPropagation(); calibrateLevel(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
             <button onClick={(e) => { e.stopPropagation(); resetLevel(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
