@@ -69,7 +69,7 @@ export default function Multitool() {
         </div>
       </main>
 
-      <nav className="fixed bottom-24 left-2 right-2 z-20 flex items-center rounded-xl border" style={{ backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)" }}>
+      <nav className="fixed left-2 right-2 z-20 flex items-center rounded-xl border portrait:bottom-24 landscape:bottom-6" style={{ backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)" }}>
           {[{id:"flashlight",l:"Light",i:<Flashlight size={20} />},{id:"level",l:"Level",i:<Compass size={20} />},{id:"calculator",l:"Calc",i:<Calculator size={20} />},{id:"ruler",l:"Ruler",i:<Ruler size={20} />},{id:"arruler",l:"Measure",i:<Camera size={20} />}].map(t => (
             <button key={t.id} onClick={() => switchTool(t.id)} className="flex-1 flex flex-col items-center gap-1 py-3 rounded-xl transition-all" style={activeTool === t.id ? {background:`linear-gradient(to bottom,${settings.accent}22,${settings.glow}11)`,color:"white"} : {color:"rgba(255,255,255,0.35)"}}>
               <span style={activeTool === t.id ? {color:settings.accent,transform:"scale(1.1)"} : {}}>{t.i}</span>
@@ -138,15 +138,15 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
   return (
     <div className="p-4 flex flex-col items-center">
       <div className="flex gap-2 mb-4">
-        <button onClick={() => setMode("angle")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+        <button onClick={() => setMode("level")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "level" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
           <Compass size={18} />Spirit Level
         </button>
-        <button onClick={() => setMode("level")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "level" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+        <button onClick={() => setMode("angle")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
           <Move size={18} />Plumb
         </button>
       </div>
 
-      {mode === "angle" ? (
+      {mode === "level" ? (
         <div className="flex flex-col items-center gap-4 w-full">
           <div className="relative w-52 h-52 rounded-full border overflow-hidden" style={{backgroundColor:"rgba(12,12,12,0.9)",borderColor:"rgba(255,255,255,0.08)"}}>
             <div className="absolute inset-0 flex items-center justify-center"><div className="w-full h-px" style={{backgroundColor:"rgba(255,255,255,0.06)"}} /><div className="absolute inset-0 flex flex-col items-center justify-center"><div className="h-full w-px" style={{backgroundColor:"rgba(255,255,255,0.06)"}} /></div></div>
