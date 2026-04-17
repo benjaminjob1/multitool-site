@@ -164,15 +164,15 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
   return (
     <div className="p-4 flex flex-col items-center">
       <div className="flex gap-2 mb-4">
-        <button onClick={() => setMode("level")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "level" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+        <button onClick={() => setMode("angle")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
           <Compass size={18} />Spirit Level
         </button>
-        <button onClick={() => setMode("angle")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+        <button onClick={() => setMode("level")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "level" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
           <Move size={18} />Plumb
         </button>
       </div>
 
-      {mode === "level" ? (
+      {mode === "angle" ? (
         <div className="flex flex-col items-center gap-4 w-full">
           <div className="relative w-52 h-52 rounded-full border overflow-hidden" style={{backgroundColor:"rgba(12,12,12,0.9)",borderColor:"rgba(255,255,255,0.08)"}}>
             <div className="absolute inset-0 flex items-center justify-center"><div className="w-full h-px" style={{backgroundColor:"rgba(255,255,255,0.06)"}} /><div className="absolute inset-0 flex flex-col items-center justify-center"><div className="h-full w-px" style={{backgroundColor:"rgba(255,255,255,0.06)"}} /></div></div>
