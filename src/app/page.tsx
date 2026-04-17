@@ -17,7 +17,7 @@ export default function Multitool() {
   return (
     <div className="min-h-screen text-white flex flex-col" style={{ backgroundColor: "rgb(0,0,0)", filter: `brightness(${settings.brightness})` }}>
       {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-end justify-end p-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-end p-4">
           <div className="w-72 rounded-2xl p-5 border backdrop-blur-xl" style={{ backgroundColor: "rgba(10,10,10,0.98)", borderColor: "rgba(255,255,255,0.08)" }}>
             <div className="flex justify-between items-center mb-5">
               <h3 className="text-lg font-semibold">Settings</h3>
