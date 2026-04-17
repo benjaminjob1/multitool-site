@@ -180,10 +180,7 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
             <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>Vertical</div><div className="text-xl font-mono font-bold" style={{color:Math.abs(pitch)<2?"#22c55e":"white"}}>{pitch.toFixed(1)}°</div></div>
           </div>
           <div className="text-2xl font-bold" style={{color:lvl?"#22c55e":"rgba(255,255,255,0.35)"}}>{lvl ? "LEVEL" : `${off.toFixed(1)}° off`}</div>
-          <div className="flex gap-2">
-            <button onClick={calibrateLevel} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
-            <button onClick={resetLevel} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
-          </div>
+          <button onClick={calibrateLevel} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-4 w-full">
@@ -207,10 +204,7 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
             <div className="text-5xl font-mono font-bold" style={{color:angCol}}>{angle.toFixed(1)}°</div>
             <div className="mt-1" style={{color:"rgba(255,255,255,0.4)"}}>{absAngle < 2 ? "Plumb!" : `${absAngle.toFixed(1)}° off`}</div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={calibrateAngle} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
-            <button onClick={resetAngle} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
-          </div>
+          <button onClick={calibrateAngle} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
         </div>
       )}
     </div>
