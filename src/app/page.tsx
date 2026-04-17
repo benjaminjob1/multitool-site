@@ -57,6 +57,7 @@ export default function Multitool() {
 
       <header className="relative z-10 p-4 flex justify-between items-center shrink-0">
         <h1 className="text-2xl font-bold" style={{ color: settings.accent }}>Multitool</h1>
+        <button onClick={() => setShowNav(!showNav)} className="p-2 rounded-xl hover:bg-white/10">{showNav ? <EyeOff size={22} /> : <Eye size={22} />}</button>
         <button onClick={() => setShowSettings(true)} className="p-2 rounded-xl hover:bg-white/10"><Settings size={22} /></button>
       </header>
 
@@ -70,9 +71,6 @@ export default function Multitool() {
         </div>
       </main>
 
-      <button onClick={() => setShowNav(!showNav)} className="fixed z-30 p-2 rounded-xl border" style={{ bottom: "inherit", top: "1rem", left: "0.5rem", backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)" }}>
-        {showNav ? <EyeOff size={20} /> : <Eye size={20} />}
-      </button>
 
       {showNav && (
       <nav className="fixed left-2 right-2 z-20 flex items-center rounded-xl border portrait:bottom-24 landscape:bottom-6" style={{ backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)" }}>
