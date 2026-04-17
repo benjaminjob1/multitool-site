@@ -95,7 +95,16 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
   const [pitch, setPitch] = useState(0);
   const [angle, setAngle] = useState(0);
   const [perm, setPerm] = useState<boolean|null>(null);
+  const [landscape, setLandscape] = useState(false);
   const calRef = useRef({roll:0, pitch:0}); const angleCalRef = useRef(0);
+
+  // Detect landscape orientation
+  useEffect(() => {
+    const check = () => setLandscape(window.innerWidth > window.innerHeight);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const reqPerm = async () => {
     if (typeof DeviceOrientationEvent !== "undefined" && typeof (DeviceOrientationEvent as any).requestPermission === "function") {
@@ -105,17 +114,24 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
 
   useEffect(() => {
     if (!perm) return;
+    let currentLandscape = landscape;
     const h = (e: DeviceOrientationEvent) => {
       if (e.gamma === null && e.alpha === null) return;
-      if (e.gamma !== null) {
-        setRoll(e.gamma - calRef.current.roll);
+      // Swap axes based on orientation at time of listener creation
+      if (currentLandscape) {
+        // Landscape: beta is horizontal, gamma is vertical
+        setRoll((e.beta ?? 0) - calRef.current.roll);
+        if (e.gamma !== null) setPitch(e.gamma - calRef.current.pitch);
+      } else {
+        // Portrait: gamma is horizontal, beta is vertical
+        if (e.gamma !== null) setRoll(e.gamma - calRef.current.roll);
         setPitch((e.beta ?? 0) - calRef.current.pitch);
       }
       if (e.gamma !== null) { let a = e.gamma - angleCalRef.current; if (a < 0) a += 360; if (a > 180) a -= 360; setAngle(a); }
     };
     window.addEventListener("deviceorientation", h, true);
     return () => window.removeEventListener("deviceorientation", h, true);
-  }, [perm]);
+  }, [perm, landscape]);
 
   const calibrate = () => { calRef.current = { roll, pitch }; angleCalRef.current = angle; };
 
