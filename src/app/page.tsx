@@ -133,9 +133,9 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
   useEffect(() => { rollRef.current = roll; pitchRef.current = pitch; }, [roll, pitch]);
   useEffect(() => { angleRef.current = angle; }, [angle]);
 
-  const calibrateLevel = useCallback(() => { calRef.current = { roll: rollRef.current, pitch: pitchRef.current }; }, []);
+  const calibrateLevel = useCallback(() => { setTimeout(() => { calRef.current = { roll: rollRef.current, pitch: pitchRef.current }; }, 100); }, []);
   const resetLevel = useCallback(() => { calRef.current = { roll: 0, pitch: 0 }; }, []);
-  const calibrateAngle = useCallback(() => { angleCalRef.current = angleRef.current; }, []);
+  const calibrateAngle = useCallback(() => { setTimeout(() => { angleCalRef.current = angleRef.current; }, 100); }, []);
   const resetAngle = useCallback(() => { angleCalRef.current = 0; }, []);
 
   const off = Math.sqrt(roll*roll + pitch*pitch);
