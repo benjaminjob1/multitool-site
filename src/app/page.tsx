@@ -164,10 +164,10 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
   return (
     <div className="p-4 flex flex-col items-center">
       <div className="flex gap-2 mb-4">
-        <button onClick={() => setMode("level")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "level" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+        <button onClick={() => setMode("angle")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
           <Compass size={18} />Spirit Level
         </button>
-        <button onClick={() => setMode("angle")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "angle" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
+        <button onClick={() => setMode("level")} className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all" style={mode === "level" ? {backgroundColor:`${s.accent}22`,borderColor:s.accent,color:s.accent} : {borderColor:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.5)"}}>
           <Move size={18} />Plumb
         </button>
       </div>
@@ -191,20 +191,29 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
         </div>
       ) : mode === "angle" ? (
         <div className="flex flex-col items-center gap-4 w-full">
-          <div className="relative w-52 h-52 rounded-full border overflow-hidden" style={{backgroundColor:"rgba(12,12,12,0.9)",borderColor:"rgba(255,255,255,0.08)"}}
-          >
-            <div className="absolute inset-0 flex items-center justify-center"><div className="w-full h-px" style={{backgroundColor:"rgba(255,255,255,0.06)"}} /><div className="absolute inset-0 flex flex-col items-center justify-center"><div className="h-full w-px" style={{backgroundColor:"rgba(255,255,255,0.06)"}} /></div></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border" style={{borderColor:"rgba(34,197,94,0.4)"}} />
-            <div className="absolute w-16 h-16 rounded-full transition-all duration-100" style={{background:`radial-gradient(circle at 30% 30%,${col}cc,${col})`,top:`calc(50% + ${Math.min(Math.max(pitch*3,-80),80)}px - 32px)`,left:`calc(50% + ${Math.min(Math.max(roll*3,-80),80)}px - 32px)`,boxShadow:`0 0 25px ${col}66`}} />
+          <div className="relative w-64">
+            <svg viewBox="0 0 200 110" className="w-full">
+              <path d="M 10 100 A 90 90 0 0 1 190 100" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8"/>
+              {Array.from({length:37}).map((_, i) => {
+                const deg = i * 5;
+                const rad = (deg - 90) * Math.PI / 180;
+                const x1 = 100 + 80 * Math.cos(rad);
+                const y1 = 100 + 80 * Math.sin(rad);
+                const x2 = 100 + (deg % 30 === 0 ? 65 : 72) * Math.cos(rad);
+                const y2 = 100 + (deg % 30 === 0 ? 65 : 72) * Math.sin(rad);
+                return (<g key={deg}><line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.15)" strokeWidth={deg % 90 === 0 ? 2 : 1}/>{deg % 30 === 0 && (<text x={100 + 52 * Math.cos(rad)} y={100 + 52 * Math.sin(rad)} fill="rgba(255,255,255,0.4)" fontSize="8" textAnchor="middle" dominantBaseline="middle">{deg}</text>)}</g>);
+              })}
+              <line x1="100" y1="100" x2={100 + 70 * Math.cos((angle - 90) * Math.PI / 180)} y2={100 + 70 * Math.sin((angle - 90) * Math.PI / 180)} stroke={s.accent} strokeWidth="3"/>
+              <circle cx="100" cy="100" r="5" fill={s.accent}/>
+            </svg>
           </div>
-          <div className="grid grid-cols-2 gap-4 text-center w-full max-w-xs">
-            <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>Horizontal</div><div className="text-xl font-mono font-bold" style={{color:Math.abs(roll)<2?"#22c55e":"white"}}>{roll.toFixed(1)}°</div></div>
-            <div className="p-3 rounded-xl border" style={{backgroundColor:"rgba(12,12,12,0.6)",borderColor:"rgba(255,255,255,0.05)"}}><div className="text-xs mb-1" style={{color:"rgba(255,255,255,0.4)"}}>Vertical</div><div className="text-xl font-mono font-bold" style={{color:Math.abs(pitch)<2?"#22c55e":"white"}}>{pitch.toFixed(1)}°</div></div>
+          <div className="text-center">
+            <div className="text-5xl font-mono font-bold" style={{color:angCol}}>{angle.toFixed(1)}°</div>
+            <div className="mt-1" style={{color:"rgba(255,255,255,0.4)"}}>{absAngle < 2 ? "LEVEL" : ""}</div>
           </div>
-          <div className="text-2xl font-bold" style={{color:lvl?"#22c55e":"rgba(255,255,255,0.35)"}}>{lvl ? "LEVEL" : `${off.toFixed(1)}° off`}</div>
           <div className="flex gap-2">
-            <button onClick={(e) => { e.stopPropagation(); calibrateLevel(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
-            <button onClick={(e) => { e.stopPropagation(); resetLevel(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
+            <button onClick={(e) => { e.stopPropagation(); calibrateAngle(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
+            <button onClick={(e) => { e.stopPropagation(); resetAngle(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
           </div>
         </div>
       ) : null}
