@@ -91,6 +91,8 @@ export default function Multitool() {
 // Combined Level + Angle Tool
 function LevelAngleTool({s}: {s: ToolSettings}) {
   const [mode, setMode] = useState<"level"|"angle">("level");
+  const modeRef = useRef(mode);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
   const [roll, setRoll] = useState(0);
   const [pitch, setPitch] = useState(0);
   const [angle, setAngle] = useState(0);
@@ -117,13 +119,13 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
     let currentLandscape = landscape;
     const h = (e: DeviceOrientationEvent) => {
       if (e.gamma === null && e.alpha === null) return;
-      // Swap axes based on orientation at time of listener creation
-      if (currentLandscape) {
-        // Landscape: beta is horizontal, gamma is vertical
+      // Only swap axes in landscape for level mode (Spirit Level)
+      if (currentLandscape && modeRef.current === "level") {
+        // Landscape Spirit Level: beta is horizontal, gamma is vertical
         setRoll((e.beta ?? 0) - calRef.current.roll);
         if (e.gamma !== null) setPitch(e.gamma - calRef.current.pitch);
       } else {
-        // Portrait: gamma is horizontal, beta is vertical
+        // Portrait: gamma is horizontal, beta is vertical (default for both)
         if (e.gamma !== null) setRoll(e.gamma - calRef.current.roll);
         setPitch((e.beta ?? 0) - calRef.current.pitch);
       }
