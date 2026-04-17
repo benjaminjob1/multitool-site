@@ -117,10 +117,15 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
     let currentLandscape = landscape;
     const h = (e: DeviceOrientationEvent) => {
       if (e.gamma === null && e.alpha === null) return;
-      // Spirit Level: gamma controls horizontal (roll), beta controls vertical (pitch)
-      // This works correctly in both portrait and landscape since device axes are absolute
-      if (e.gamma !== null) setRoll(e.gamma - calRef.current.roll);
-      setPitch((e.beta ?? 0) - calRef.current.pitch);
+      // Spirit Level: in landscape, beta is the side-to-side tilt, gamma is front-to-back
+      // For the bubble to move correctly in landscape, we need to swap
+      if (currentLandscape) {
+        setRoll((e.beta ?? 0) - calRef.current.roll);
+        if (e.gamma !== null) setPitch(e.gamma - calRef.current.pitch);
+      } else {
+        if (e.gamma !== null) setRoll(e.gamma - calRef.current.roll);
+        setPitch((e.beta ?? 0) - calRef.current.pitch);
+      }
       if (e.gamma !== null) { let a = e.gamma - angleCalRef.current; if (a < 0) a += 360; if (a > 180) a -= 360; setAngle(a); }
     };
     window.addEventListener("deviceorientation", h, true);
