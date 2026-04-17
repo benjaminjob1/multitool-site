@@ -119,16 +119,10 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
     let currentLandscape = landscape;
     const h = (e: DeviceOrientationEvent) => {
       if (e.gamma === null && e.alpha === null) return;
-      // Only swap axes in landscape for level mode (Spirit Level)
-      if (currentLandscape && modeRef.current === "level") {
-        // Landscape Spirit Level: beta is horizontal, gamma is vertical
-        setRoll((e.beta ?? 0) - calRef.current.roll);
-        if (e.gamma !== null) setPitch(e.gamma - calRef.current.pitch);
-      } else {
-        // Portrait: gamma is horizontal, beta is vertical (default for both)
-        if (e.gamma !== null) setRoll(e.gamma - calRef.current.roll);
-        setPitch((e.beta ?? 0) - calRef.current.pitch);
-      }
+      // Spirit Level: gamma controls horizontal (roll), beta controls vertical (pitch)
+      // This works correctly in both portrait and landscape since device axes are absolute
+      if (e.gamma !== null) setRoll(e.gamma - calRef.current.roll);
+      setPitch((e.beta ?? 0) - calRef.current.pitch);
       if (e.gamma !== null) { let a = e.gamma - angleCalRef.current; if (a < 0) a += 360; if (a > 180) a -= 360; setAngle(a); }
     };
     window.addEventListener("deviceorientation", h, true);
