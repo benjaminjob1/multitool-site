@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Flashlight, Compass, Calculator, Ruler, RotateCcw, Camera, Move, Trash2, Settings, X, RefreshCw } from "lucide-react";
+import { Flashlight, Compass, Calculator, Ruler, RotateCcw, Camera, Move, Trash2, Settings, X, RefreshCw, Eye, EyeOff } from "lucide-react";
 
 interface ToolSettings { accent: string; glow: string; brightness: number; }
 
 export default function Multitool() {
   const [activeTool, setActiveTool] = useState<string>("level");
   const [showSettings, setShowSettings] = useState(false);
+  const [showNav, setShowNav] = useState(true);
   const [settings, setSettings] = useState<ToolSettings>({ accent: "#8b5cf6", glow: "#a855f7", brightness: 0.85 });
 
   useEffect(() => { const s = localStorage.getItem("mt-settings"); if (s) try { setSettings(JSON.parse(s)); } catch {} }, []);
@@ -69,6 +70,11 @@ export default function Multitool() {
         </div>
       </main>
 
+      <button onClick={() => setShowNav(!showNav)} className="fixed z-30 p-2 rounded-xl border" style={{ bottom: "inherit", top: "1rem", right: "0.5rem", backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)" }}>
+        {showNav ? <EyeOff size={20} /> : <Eye size={20} />}
+      </button>
+
+      {showNav && (
       <nav className="fixed left-2 right-2 z-20 flex items-center rounded-xl border portrait:bottom-24 landscape:bottom-6" style={{ backgroundColor: "rgba(8,8,8,0.98)", borderColor: "rgba(255,255,255,0.05)" }}>
           {[{id:"flashlight",l:"Light",i:<Flashlight size={20} />},{id:"level",l:"Level",i:<Compass size={20} />},{id:"calculator",l:"Calc",i:<Calculator size={20} />},{id:"ruler",l:"Ruler",i:<Ruler size={20} />},{id:"arruler",l:"Measure",i:<Camera size={20} />}].map(t => (
             <button key={t.id} onClick={() => switchTool(t.id)} className="flex-1 flex flex-col items-center gap-1 py-3 rounded-xl transition-all" style={activeTool === t.id ? {background:`linear-gradient(to bottom,${settings.accent}22,${settings.glow}11)`,color:"white"} : {color:"rgba(255,255,255,0.35)"}}>
@@ -77,6 +83,7 @@ export default function Multitool() {
             </button>
           ))}
       </nav>
+      )}
     </div>
   );
 }
