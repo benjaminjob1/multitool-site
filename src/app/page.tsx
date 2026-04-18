@@ -183,8 +183,8 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
           </div>
           <div className="text-2xl font-bold" style={{color:lvl?"#22c55e":"rgba(255,255,255,0.35)"}}>{lvl ? "LEVEL" : `${off.toFixed(1)}° off`}</div>
           <div className="flex gap-2">
-            <button onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); calibrateLevel(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
-            <button onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); resetLevel(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
+            <button onClick={calibrateLevel} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
+            <button onClick={resetLevel} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
           </div>
         </div>
       ) : mode === "angle" ? (
@@ -210,8 +210,8 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
             <div className="mt-1" style={{color:"rgba(255,255,255,0.4)"}}>{absAngle < 2 ? "LEVEL" : ""}</div>
           </div>
           <div className="flex gap-2">
-            <button onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); calibrateAngle(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
-            <button onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); resetAngle(); }} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
+            <button onClick={calibrateAngle} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Zero</button>
+            <button onClick={resetAngle} className="flex items-center gap-2 px-5 py-2 rounded-xl border border-white/10 hover:bg-white/5"><RotateCcw size={16} /> Reset</button>
           </div>
         </div>
       ) : null}
