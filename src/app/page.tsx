@@ -117,10 +117,10 @@ function LevelAngleTool({s}: {s: ToolSettings}) {
     let currentLandscape = landscape;
     const h = (e: DeviceOrientationEvent) => {
       if (e.gamma === null && e.alpha === null) return;
-      // Always use gamma for horizontal (roll) and beta for vertical (pitch)
-      // Mobile browsers typically handle orientation transformation automatically
-      if (e.gamma !== null) setRoll(e.gamma - calRef.current.roll);
-      setPitch((e.beta ?? 0) - calRef.current.pitch);
+      // Use beta for horizontal (roll) and gamma for vertical (pitch)
+      // Beta = tilt side-to-side, Gamma = tilt front-to-back
+      setRoll((e.beta ?? 0) - calRef.current.roll);
+      if (e.gamma !== null) setPitch(e.gamma - calRef.current.pitch);
       if (e.gamma !== null) { let a = e.gamma - angleCalRef.current; if (a < 0) a += 360; if (a > 180) a -= 360; setAngle(a); }
     };
     window.addEventListener("deviceorientation", h, true);
