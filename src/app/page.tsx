@@ -42,14 +42,7 @@ export default function Multitool() {
                 <label className="block text-sm mb-2" style={{ color: "rgba(255,255,255,0.5)" }}>Brightness {Math.round(settings.brightness * 100)}%</label>
                 <input type="range" min="0.3" max="1" step="0.05" value={settings.brightness} onChange={e => saveSettings("brightness", parseFloat(e.target.value))} className="w-full" style={{ accentColor: settings.accent }} />
               </div>
-              <div className="grid grid-cols-3 gap-2 pt-2">
-                {[{n:"Purple",a:"#8b5cf6",g:"#a855f7"},{n:"Blue",a:"#3b82f6",g:"#60a5fa"},{n:"Green",a:"#22c55e",g:"#4ade80"},{n:"Orange",a:"#f97316",g:"#fb923c"},{n:"Red",a:"#ef4444",g:"#f87171"},{n:"Pink",a:"#ec4899",g:"#f472b6"}].map(p => (
-                  <button key={p.n} onClick={() => { saveSettings("accent", p.a); saveSettings("glow", p.g); }} className="p-2 rounded-lg text-xs border border-white/5 hover:bg-white/5 transition-all">
-                    <div className="flex gap-1 justify-center mb-1"><div className="w-3 h-3 rounded-full" style={{backgroundColor:p.a}} /><div className="w-3 h-3 rounded-full" style={{backgroundColor:p.g}} /></div>
-                    {p.n}
-                  </button>
-                ))}
-              </div>
+
             </div>
           </div>
         </div>
